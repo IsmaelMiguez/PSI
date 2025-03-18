@@ -1,0 +1,158 @@
+\documentclass[a4paper,openright,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx} 
+\usepackage{subfigure}
+\usepackage[mathscr]{eucal}
+\usepackage{titling}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{afterpage}
+\usepackage{vmargin}
+\usepackage[spanish]{babel}
+\usepackage{eurosym} 
+\usepackage{multirow} 
+\usepackage{cite}
+\usepackage{url}
+
+\setpapersize{A4}	   %  DIN A4
+\setmargins{3cm}    % margen izquierdo
+{3.5cm}                     % margen superior
+{15cm}                       % anchura del texto
+{22.5cm}                   % altura del texto
+{10pt}                         % altura de los encabezados
+{1cm}                         % espacio entre el texto y los encabezados
+{0pt}                           % altura del pie de página
+{2cm}                         % espacio entre el texto y el pie de página
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+\vspace*{-1in}
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[width=8cm]{udc.eps}
+\end{center}
+\end{figure}
+
+\vspace*{1in}
+PROGRAMACIÓN DE SISTEMA 18/19 Q1\\
+Icono de la aplicación\\
+\vspace*{1in}
+\begin{Large}
+\textbf{Título del Proyecto} \\
+\end{Large}
+
+\vspace*{3in}
+
+\begin{large}
+\raggedleft
+\textbf{Autores:}User1 \\
+User2\\
+\textbf{Fecha:}\textit{A Coruña, 1 Octubre 2018}\\
+\end{large}
+
+\end{center}
+\end{titlepage} 
+
+\newpage
+
+\addtocontents{toc}{\hspace{-7.5mm} \textbf{Capítulos}}
+\addtocontents{toc}{\hfill \textbf{Página} \par}
+\addtocontents{toc}{\vspace{-2mm} \hspace{-7.5mm} \hrule \par}
+
+\pagenumbering{empty}
+
+\tableofcontents
+
+\vspace{5cm}
+
+\begin{flushright}
+\begin{table}[hbtp]
+\begin{center}
+
+\caption{Tabla de versiones.}
+\label{tabla:versiones}
+\small
+\vspace{1ex}
+
+\begin{tabular}{|c|c|l|}
+\hline
+Versión & Fecha & Autor \\
+\hline \hline
+x & y & \\ \hline
+x & y & \\ \hline
+x & y & \\ \hline
+\end{tabular}
+
+\end{center}
+\end{table}
+\end{flushright}
+
+
+\newpage
+\pagenumbering{arabic}
+
+
+%%%%%%%
+%%%%%%%
+\section{Introducción}\label{cap.introduccion}
+
+%%
+\subsection{Objetivos}
+
+%%
+\subsection{Motivación}
+
+%%
+\subsection{Trabajo relacionado}
+
+
+%%%%%%%
+%%%%%%%
+\section{Análisis de requisitos}
+
+%%
+\subsection{Funcionalidades}
+
+%%
+\subsection{Prioridades}
+
+
+%%%%%%%
+%%%%%%%
+\section{Planificación inicial}
+
+%%
+\subsection{Iteraciones}
+
+%%
+\subsection{Responsabilidades}
+
+%%
+\subsection{Hitos}
+
+%%
+\subsection{Incidencias}
+
+
+%%%%%%%
+%%%%%%%
+\section{Diseño}
+
+%%
+\subsection{A completar...}
+
+
+%%%%%%%
+%%%%%%%
+\include{latex_tutorial}
+
+
+
+\bibliographystyle{pfc-fic}
+\bibliography{biblio}
+\addcontentsline{toc}{section}{Bibliografía}
+
+\end{document}
