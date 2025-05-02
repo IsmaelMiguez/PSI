@@ -3,6 +3,7 @@ package es.udc.psi.pacman;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -19,6 +20,7 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     private Thread thread;
     private SurfaceHolder holder;
     private boolean canDraw = true;
+    private boolean useButtonControls;
 
     private Paint paint;
     private Bitmap[] pacmanRight, pacmanDown, pacmanLeft, pacmanUp;
@@ -46,6 +48,7 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     private int currentScore = 0;           //Current game score
     final Handler handler = new Handler();
 
+
     public DrawingView(Context context) {
         super(context);
         holder = getHolder();
@@ -62,6 +65,9 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
         yPosGhost = 4 * blockSize;
         xPosPacman = 8 * blockSize;
         yPosPacman = 13 * blockSize;
+        // Leer el modo de control desde SharedPreferences
+        SharedPreferences prefs = context.getSharedPreferences("info", Context.MODE_PRIVATE);
+        useButtonControls = prefs.getBoolean("use_button_controls", false);
 
         loadBitmapImages();
         Log.i("info", "Constructor");
@@ -373,23 +379,28 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     // Method to get touch events
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
-            case (MotionEvent.ACTION_DOWN): {
-                x1 = event.getX();
-                y1 = event.getY();
-                handler.postDelayed(longPressed, LONG_PRESS_TIME);
-                break;
-            }
-            case (MotionEvent.ACTION_UP): {
-                x2 = event.getX();
-                y2 = event.getY();
-                calculateSwipeDirection();
-                handler.removeCallbacks(longPressed);
-                break;
+        if (!useButtonControls) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    x1 = event.getX();
+                    y1 = event.getY();
+                    handler.postDelayed(longPressed, LONG_PRESS_TIME);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    x2 = event.getX();
+                    y2 = event.getY();
+                    calculateSwipeDirection();
+                    handler.removeCallbacks(longPressed);
+                    break;
             }
         }
         return true;
     }
+
+    public void setNextDirection(int direction) {
+        this.nextDirection = direction;
+    }
+
 
     // Calculates which direction the user swipes
     // based on calculating the differences in

@@ -21,50 +21,70 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center_horizontal|bottom"
+        android:layout_marginBottom="30dp">
+
 
         <GridLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:rowCount="3"
-            android:columnCount="3"
             android:alignmentMode="alignMargins"
+            android:columnCount="3"
+            android:rowCount="3"
             android:useDefaultMargins="true">
 
             <!-- Fila 1 -->
-            <View android:layout_width="80dp" android:layout_height="80dp" />
+            <View
+                android:layout_width="80dp"
+                android:layout_height="80dp" />
+
             <Button
                 android:id="@+id/btnUp"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:text="↑"
-                android:textSize="24sp"/>
-            <View android:layout_width="80dp" android:layout_height="80dp" />
+                android:layout_row="0"
+                android:layout_column="1"
+                android:text="@string/arrow_up"
+                android:textSize="24sp" />
+
+            <View
+                android:layout_width="80dp"
+                android:layout_height="80dp" />
 
             <!-- Fila 2 -->
             <Button
                 android:id="@+id/btnLeft"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:text="←"
-                android:textSize="24sp"/>
-            <View android:layout_width="80dp" android:layout_height="80dp" />
+                android:text="@string/arrow_left"
+                android:textSize="24sp" />
+
+            <View
+                android:layout_width="80dp"
+                android:layout_height="80dp" />
+
             <Button
                 android:id="@+id/btnRight"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:text="→"
-                android:textSize="24sp"/>
+                android:text="@string/arrow_right"
+                android:textSize="24sp" />
 
             <!-- Fila 3 -->
-            <View android:layout_width="80dp" android:layout_height="80dp" />
+            <View
+                android:layout_width="80dp"
+                android:layout_height="80dp" />
+
             <Button
                 android:id="@+id/btnDown"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:text="↓"
-                android:textSize="24sp"/>
-            <View android:layout_width="80dp" android:layout_height="80dp" />
+                android:text="@string/arrow_down"
+                android:textSize="24sp" />
+
+            <View
+                android:layout_width="80dp"
+                android:layout_height="80dp" />
         </GridLayout>
     </LinearLayout>
 </FrameLayout>

@@ -22,4 +22,8 @@
     <string name="pantalla_extendida">Pantalla extendida</string>
     <string name="clasico">Clasico</string>
     <string name="configuracion">Configuracion</string>
+    <string name="arrow_up">↑</string>
+    <string name="arrow_left">←</string>
+    <string name="arrow_right">→</string>
+    <string name="arrow_down">↓</string>
 </resources>
