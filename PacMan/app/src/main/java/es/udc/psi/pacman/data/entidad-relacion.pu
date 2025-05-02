@@ -1,0 +1,37 @@
+@startuml Diagrama_Entidad_Relacion
+
+' Entidades
+entity "Jugador" as jugador {
+  *ID_Jugador : INTEGER <<PK>>
+  --
+  *Nombre : TEXT
+  *Email : TEXT <<UNIQUE>>
+  FechaRegistro : TIMESTAMP
+  *Contraseña : TEXT
+  ÚltimaConexión : TIMESTAMP
+}
+
+entity "Partida" as partida {
+  *ID_Partida : INTEGER <<PK>>
+  --
+  Fecha : TIMESTAMP
+  *Duración : INTEGER
+  *Nivel : INTEGER
+  *ModoJuego : TEXT
+}
+
+entity "Puntuación" as puntuacion {
+  *ID_Puntuación : INTEGER <<PK>>
+  --
+  *ID_Jugador : INTEGER <<FK>>
+  *ID_Partida : INTEGER <<FK>>
+  *Puntos : INTEGER
+  FechaRegistro : TIMESTAMP
+  Posición : INTEGER
+}
+
+' Relaciones
+jugador "1" -- "0..*" puntuacion : tiene >
+partida "1" -- "0..*" puntuacion : registra >
+
+@enduml
