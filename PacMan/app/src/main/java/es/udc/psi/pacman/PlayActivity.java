@@ -14,14 +14,33 @@ public class PlayActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        drawingView = new DrawingView(this);
-        setContentView(drawingView);
+
+        SharedPreferences prefs = getSharedPreferences("info", MODE_PRIVATE);
+        boolean useButtons = prefs.getBoolean("use_button_controls", false);
+
+        if (useButtons) {
+            setContentView(R.layout.activity_play_with_controls); // Este tendrá cruceta + DrawingView
+            drawingView = findViewById(R.id.drawingView);
+            setupControlButtons();
+        } else {
+            drawingView = new DrawingView(this);
+            setContentView(drawingView);
+        }
+
         activity = this;
         globals = Globals.getInstance();
-        sharedPreferences = getSharedPreferences("info", MODE_PRIVATE);
-        int temp = sharedPreferences.getInt("high_score",0);
+        int temp = prefs.getInt("high_score", 0);
         globals.setHighScore(temp);
     }
+
+    private void setupControlButtons() {
+        findViewById(R.id.btnUp).setOnClickListener(v -> drawingView.setNextDirection(0));
+        findViewById(R.id.btnRight).setOnClickListener(v -> drawingView.setNextDirection(1));
+        findViewById(R.id.btnDown).setOnClickListener(v -> drawingView.setNextDirection(2));
+        findViewById(R.id.btnLeft).setOnClickListener(v -> drawingView.setNextDirection(3));
+    }
+
+
 
     @Override
     protected void onPause() {
