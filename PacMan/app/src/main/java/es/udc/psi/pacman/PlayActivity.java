@@ -16,6 +16,7 @@ public class PlayActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences("info", MODE_PRIVATE);
+        sharedPreferences = prefs;
         boolean useButtons = prefs.getBoolean("use_button_controls", false);
 
         if (useButtons) {
