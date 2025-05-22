@@ -10,6 +10,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -51,26 +52,43 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
 
     public DrawingView(Context context) {
         super(context);
+        init(context);
+    }
+
+    public DrawingView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init(context);
+    }
+
+    public DrawingView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        init(context);
+    }
+
+
+    private void init(Context context) {
         holder = getHolder();
         holder.addCallback(this);
-        frameTicker = 1000/totalFrame;
+
+        frameTicker = 1000 / totalFrame;
         paint = new Paint();
         paint.setColor(Color.WHITE);
+
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         screenWidth = metrics.widthPixels;
-        blockSize = screenWidth/17;
-        blockSize = (blockSize / 5) * 5;
+        blockSize = (screenWidth / 17 / 5) * 5;
+
         xPosGhost = 8 * blockSize;
-        ghostDirection = 4;
         yPosGhost = 4 * blockSize;
         xPosPacman = 8 * blockSize;
         yPosPacman = 13 * blockSize;
-        // Leer el modo de control desde SharedPreferences
-        SharedPreferences prefs = context.getSharedPreferences("info", Context.MODE_PRIVATE);
+
+        SharedPreferences prefs =
+                context.getSharedPreferences("info", Context.MODE_PRIVATE);
         useButtonControls = prefs.getBoolean("use_button_controls", false);
 
         loadBitmapImages();
-        Log.i("info", "Constructor");
+        Log.i("info", "DrawingView init");
     }
 
     @Override
