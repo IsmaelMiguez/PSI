@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvWelcome;
     private FirebaseAuth mAuth;
     private boolean isGuest = false;
+    private Button btnSettings;
 
     // Method to start activity for Help button
     public void showHelpScreen(View view) {
@@ -37,20 +39,30 @@ public class MainActivity extends AppCompatActivity {
         startActivity(playIntent);
     }
 
+    // Method to start activity for Settings button
+    public void showSettingsScreen() {
+        Intent settingsIntent = new Intent(this, SettingsActivity.class);
+        startActivity(settingsIntent);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        
         // Inicializar Firebase Auth
         mAuth = FirebaseAuth.getInstance();
-
+        
         // Configurar música
         player = MediaPlayer.create(this, R.raw.pacman_song);
         player.setVolume(100, 100);
         player.setLooping(true);
         player.start();
-
+        
+        // Configurar botón de configuración
+        btnSettings = findViewById(R.id.btnSettings);
+        btnSettings.setOnClickListener(v -> showSettingsScreen());
+        
         // Verificar estado del usuario
         checkUserStatus();
     }
@@ -89,19 +101,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.action_logout) {
-            signOut();
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -131,5 +135,7 @@ public class MainActivity extends AppCompatActivity {
         if (player != null) {
             player.start();
         }
+        // Verificar estado del usuario cuando regresa a la actividad
+        checkUserStatus();
     }
 }

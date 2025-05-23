@@ -43,4 +43,19 @@
     <string name="register_successful">Registro exitoso</string>
     <string name="cerrar_sesion">Cerrar sesión</string>
     <string name="pacman_logo">pacman_logo</string>
+
+    <!-- Settings Activity -->
+    <string name="settings">Configuración</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="delete_account">Eliminar cuenta</string>
+    <string name="back">Volver</string>
+    <string name="confirm_delete_account">¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.</string>
+    <string name="confirm">Confirmar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="account_deleted">Cuenta eliminada correctamente</string>
+    <string name="logged_out">Sesión cerrada correctamente</string>
+    <string name="error_delete_account">Error al eliminar la cuenta</string>
+    <string name="user_info">Usuario: %1$s\nEmail: %2$s</string>
+    <string name="guest_user_info">Usuario invitado\nNo se guardará tu puntuación</string>
+    <string name="reauth_required">Por favor, ingresa tu contraseña para continuar</string>
 </resources>
