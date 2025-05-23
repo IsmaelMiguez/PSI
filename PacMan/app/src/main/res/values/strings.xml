@@ -26,4 +26,11 @@
     <string name="arrow_left">←</string>
     <string name="arrow_right">→</string>
     <string name="arrow_down">↓</string>
+    <string name="abrir_pantalla">Abrir pantalla</string>
+    <string name="abrir_mando">Abrir mando</string>
+    <string name="ip_del_host">IP del host</string>
+    <string name="introduce_la_direcci_n_ip_de_la_pantalla_principal">Introduce la dirección IP de la pantalla principal</string>
+    <string name="aceptar">Aceptar</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="_192_168_1_100">192.168.1.100</string>
 </resources>

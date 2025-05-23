@@ -28,6 +28,11 @@ public class MainActivity extends AppCompatActivity {
         startActivity(playIntent);
     }
 
+    public void showExtendedMenu(View v){
+        startActivity(new Intent(this, ExtendedModeMenuActivity.class));
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

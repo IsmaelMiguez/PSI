@@ -13,35 +13,24 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class Controller extends AppCompatActivity {
 
-    private static final String TAG = "PacmanController";
+    private UdpClient net;
+    private int myId = 0;   // 0 ó 1; opcional: pide al usuario
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+    @Override protected void onCreate(Bundle s) {
+        super.onCreate(s);
         setContentView(R.layout.activity_controller);
 
-        // Aplica el padding para el sistema (status bar, navigation bar)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.controller), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        String hostIp = getIntent().getStringExtra("HOST_IP");
+        try { net = new UdpClient(hostIp); } catch (Exception e){ finish(); }
 
-        // Inicializa botones y asigna eventos
-        Button btnUp = findViewById(R.id.btnUp);
-        Button btnDown = findViewById(R.id.btnDown);
-        Button btnLeft = findViewById(R.id.btnLeft);
-        Button btnRight = findViewById(R.id.btnRight);
-
-        btnUp.setOnClickListener(v -> move("UP"));
-        btnDown.setOnClickListener(v -> move("DOWN"));
-        btnLeft.setOnClickListener(v -> move("LEFT"));
-        btnRight.setOnClickListener(v -> move("RIGHT"));
+        findViewById(R.id.btnUp)   .setOnClickListener(v->net.sendDir(myId,0));
+        findViewById(R.id.btnRight).setOnClickListener(v->net.sendDir(myId,1));
+        findViewById(R.id.btnDown) .setOnClickListener(v->net.sendDir(myId,2));
+        findViewById(R.id.btnLeft) .setOnClickListener(v->net.sendDir(myId,3));
     }
 
-    private void move(String direction) {
-        // Aquí podrías comunicarte con el motor del juego o enviar eventos
-        Log.d(TAG, "Direction pressed: " + direction);
+    @Override protected void onDestroy() {
+        if(net!=null) net.close();
+        super.onDestroy();
     }
 }
