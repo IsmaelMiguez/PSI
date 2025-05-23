@@ -26,12 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private boolean isGuest = false;
     private Button btnSettings;
-
-    // Method to start activity for Help button
-    public void showHelpScreen(View view) {
-        Intent helpIntent = new Intent(this, HelpActivity.class);
-        startActivity(helpIntent);
-    }
+    private SettingsManager settingsManager;
 
     // Method to start activity for Play button
     public void showPlayScreen(View view) {
@@ -50,14 +45,24 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
+        // Inicializar Settings Manager
+        settingsManager = SettingsManager.getInstance(this);
+        
         // Inicializar Firebase Auth
         mAuth = FirebaseAuth.getInstance();
         
         // Configurar música
         player = MediaPlayer.create(this, R.raw.pacman_song);
-        player.setVolume(100, 100);
+        
+        // Aplicar volumen según configuración
+        settingsManager.applyMusicVolume(player);
+        
         player.setLooping(true);
-        player.start();
+        
+        // Solo reproducir si la música está habilitada
+        if (settingsManager.isMusicEnabled()) {
+            player.start();
+        }
         
         // Configurar botón de configuración
         btnSettings = findViewById(R.id.btnSettings);
@@ -132,10 +137,14 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         Log.i("info", "MainActivity onResume");
         super.onResume();
-        if (player != null) {
+        
+        if (player != null && settingsManager.isMusicEnabled()) {
+            // Aplicar volumen según configuración
+            settingsManager.applyMusicVolume(player);
             player.start();
         }
-        // Verificar estado del usuario cuando regresa a la actividad
+        
+        // Verificar estado del usuario cuando se regresa a la actividad
         checkUserStatus();
     }
 }
