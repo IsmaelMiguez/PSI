@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "301899118028",
+    "project_id": "pacbattle-9b7c0",
+    "storage_bucket": "pacbattle-9b7c0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301899118028:android:03c17f8b71623b25b75969",
+        "android_client_info": {
+          "package_name": "es.udc.psi.pacman"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "SECRET_FIREBASE_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
