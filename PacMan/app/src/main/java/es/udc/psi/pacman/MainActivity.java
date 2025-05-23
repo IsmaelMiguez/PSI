@@ -64,7 +64,8 @@ public class MainActivity extends AppCompatActivity {
             player.start();
         }
         
-        // Configurar botón de configuración
+        // Inicializar elementos de la UI
+        tvWelcome = findViewById(R.id.tvWelcome);
         btnSettings = findViewById(R.id.btnSettings);
         btnSettings.setOnClickListener(v -> showSettingsScreen());
         
@@ -75,29 +76,53 @@ public class MainActivity extends AppCompatActivity {
     private void checkUserStatus() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
+            // Primero mostrar un mensaje genérico mientras cargamos datos
+            tvWelcome.setText(getString(R.string.loading_user_data));
+            
             // Verificar si es un usuario invitado
             if (currentUser.isAnonymous()) {
                 isGuest = true;
-                // Podríamos añadir un TextView en el layout para mostrar mensaje de invitado
-                // tvWelcome.setText("Modo Invitado");
+                tvWelcome.setText(getString(R.string.welcome_guest));
+                Log.d(TAG, "Usuario anónimo identificado");
             } else {
+                // Para un usuario autenticado, primero intentamos mostrar la información local disponible
+                String displayName = currentUser.getDisplayName();
+                String email = currentUser.getEmail();
+                
+                // Mostrar nombre por defecto mientras se carga Firestore
+                if (displayName != null && !displayName.isEmpty()) {
+                    tvWelcome.setText(getString(R.string.welcome_user, displayName));
+                    Log.d(TAG, "Usando displayName: " + displayName);
+                } else if (email != null) {
+                    tvWelcome.setText(getString(R.string.welcome_user, email));
+                    Log.d(TAG, "Usando email: " + email);
+                }
+                
                 // Obtener datos del usuario desde Firestore
                 FirebaseFirestore db = FirebaseFirestore.getInstance();
                 db.collection("users").document(currentUser.getUid())
                         .get()
-                        .addOnCompleteListener(task -> {
-                            if (task.isSuccessful() && task.getResult() != null) {
-                                DocumentSnapshot document = task.getResult();
-                                if (document.exists()) {
-                                    // Podríamos mostrar el nombre del usuario
-                                    String username = document.getString("username");
-                                    // tvWelcome.setText("Bienvenido, " + username);
+                        .addOnSuccessListener(document -> {
+                            if (document.exists()) {
+                                // Mostrar el nombre del usuario de Firestore
+                                String username = document.getString("username");
+                                Log.d(TAG, "Datos de Firestore: username=" + username);
+                                
+                                if (username != null && !username.isEmpty()) {
+                                    tvWelcome.setText(getString(R.string.welcome_user, username));
+                                    Log.d(TAG, "Mensaje actualizado con username de Firestore");
                                 }
+                            } else {
+                                Log.d(TAG, "No se encontraron datos del usuario en Firestore");
                             }
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Error al obtener datos de usuario", e);
                         });
             }
         } else {
             // Si no hay usuario, redirigir a LoginActivity
+            Log.d(TAG, "No hay usuario autenticado, redirigiendo a login");
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
             finish();

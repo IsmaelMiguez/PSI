@@ -171,7 +171,7 @@ public class LoginActivity extends AppCompatActivity {
     public void continueAsGuest(View view) {
         // Iniciar sesión como invitado (anónimo)
         progressBar.setVisibility(View.VISIBLE);
-
+    
         mAuth.signInAnonymously()
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -180,19 +180,34 @@ public class LoginActivity extends AppCompatActivity {
                             // Inicio de sesión anónimo exitoso
                             Log.d(TAG, "signInAnonymously:success");
                             FirebaseUser user = mAuth.getCurrentUser();
-
+    
+                            // Generar un nombre de usuario para invitado
+                            String guestUsername = "Invitado_" + user.getUid().substring(0, 5);
+    
                             // Guardar información de invitado en Firestore
                             Map<String, Object> guestData = new HashMap<>();
-                            guestData.put("username", "Guest_" + user.getUid().substring(0, 5));
+                            guestData.put("username", guestUsername);
                             guestData.put("isGuest", true);
                             guestData.put("highScore", 0);
-
+    
+                            // También actualizar el displayName para acceso inmediato
+                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                    .setDisplayName(guestUsername)
+                                    .build();
+    
+                            user.updateProfile(profileUpdates)
+                                    .addOnCompleteListener(profileTask -> {
+                                        if (profileTask.isSuccessful()) {
+                                            Log.d(TAG, "Perfil de invitado actualizado");
+                                        }
+                                    });
+    
                             db.collection("users")
                                     .document(user.getUid())
                                     .set(guestData)
-                                    .addOnSuccessListener(aVoid -> Log.d(TAG, "Guest data stored in Firestore"))
-                                    .addOnFailureListener(e -> Log.w(TAG, "Error storing guest data", e));
-
+                                    .addOnSuccessListener(aVoid -> Log.d(TAG, "Datos de invitado guardados en Firestore"))
+                                    .addOnFailureListener(e -> Log.w(TAG, "Error guardando datos de invitado", e));
+    
                             Toast.makeText(LoginActivity.this, getString(R.string.guest_mode_active),
                                     Toast.LENGTH_SHORT).show();
                             startMainActivity();
@@ -202,7 +217,7 @@ public class LoginActivity extends AppCompatActivity {
                             Toast.makeText(LoginActivity.this, getString(R.string.error_auth_failed),
                                     Toast.LENGTH_SHORT).show();
                         }
-
+    
                         // Ocultar barra de progreso
                         progressBar.setVisibility(View.GONE);
                     }

@@ -27,7 +27,9 @@
     <string name="arrow_left">←</string>
     <string name="arrow_right">→</string>
     <string name="arrow_down">↓</string>
-
+    <string name="welcome_guest">¡Bienvenido, Invitado!</string>
+    <string name="welcome_user">¡Bienvenido, %1$s!</string>
+    <string name="loading_user_data">Cargando información del usuario...</string>
     <!-- Login Activity -->
     <string name="login_welcome">Bienvenido a PacMan</string>
     <string name="username">Nombre de usuario</string>
