@@ -26,4 +26,21 @@
     <string name="arrow_left">←</string>
     <string name="arrow_right">→</string>
     <string name="arrow_down">↓</string>
+
+    <!-- Login Activity -->
+    <string name="login_welcome">Bienvenido a PacMan</string>
+    <string name="username">Nombre de usuario</string>
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="register">Registrarse</string>
+    <string name="login">Iniciar sesión</string>
+    <string name="or">o</string>
+    <string name="continue_as_guest">Continuar como invitado</string>
+    <string name="error_fields_empty">Por favor, completa todos los campos</string>
+    <string name="error_auth_failed">Error en la autenticación</string>
+    <string name="guest_mode_active">Modo invitado activo</string>
+    <string name="login_successful">Inicio de sesión exitoso</string>
+    <string name="register_successful">Registro exitoso</string>
+    <string name="cerrar_sesion">Cerrar sesión</string>
+    <string name="pacman_logo">pacman_logo</string>
 </resources>
