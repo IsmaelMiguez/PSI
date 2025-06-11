@@ -1,6 +1,7 @@
 package es.udc.psi.pacman;
 
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,6 +11,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -50,27 +52,58 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
 
 
     public DrawingView(Context context) {
-        super(context);
+        this(context, null);
+    }
+
+
+    public DrawingView(Context context, AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
+
+
+    public DrawingView(Context context,
+                       AttributeSet attrs,
+                       int defStyleAttr) {
+        this(context, attrs, defStyleAttr, 0);
+    }
+
+
+    public DrawingView(Context context,
+                       AttributeSet attrs,
+                       int defStyleAttr,
+                       int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+        init(context);
+    }
+
+
+    private void init(Context context) {
         holder = getHolder();
         holder.addCallback(this);
-        frameTicker = 1000/totalFrame;
+
+        frameTicker = 1000 / totalFrame;
+
         paint = new Paint();
         paint.setColor(Color.WHITE);
+
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         screenWidth = metrics.widthPixels;
-        blockSize = screenWidth/17;
-        blockSize = (blockSize / 5) * 5;
-        xPosGhost = 8 * blockSize;
+        blockSize   = screenWidth / 17;
+        blockSize   = (blockSize / 5) * 5;
+
+        xPosGhost      = 8 * blockSize;
         ghostDirection = 4;
-        yPosGhost = 4 * blockSize;
+        yPosGhost      = 4 * blockSize;
+
         xPosPacman = 8 * blockSize;
         yPosPacman = 13 * blockSize;
-        // Leer el modo de control desde SharedPreferences
+
         SharedPreferences prefs = context.getSharedPreferences("info", Context.MODE_PRIVATE);
         useButtonControls = prefs.getBoolean("use_button_controls", false);
 
         loadBitmapImages();
-        Log.i("info", "Constructor");
+
+        Log.i("info", "DrawingView initialised");
     }
 
     @Override
@@ -298,15 +331,20 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     }
 
     public void movePacman(Canvas canvas) {
-        moveSinglePacman(
-                canvas,
-                0,
-                new int[]{xPosPacman},
-                new int[]{yPosPacman},
-                new int[]{direction},
-                new int[]{nextDirection},
-                new int[]{viewDirection}
-        );
+
+        int[] x  = { xPosPacman };
+        int[] y  = { yPosPacman };
+        int[] d  = { direction };
+        int[] nd = { nextDirection };
+        int[] vd = { viewDirection };
+
+        moveSinglePacman(canvas, 0, x, y, d, nd, vd);
+
+        xPosPacman   = x[0];
+        yPosPacman   = y[0];
+        direction    = d[0];
+        nextDirection= nd[0];
+        viewDirection= vd[0];
     }
 
 
@@ -389,10 +427,20 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     }
 
     Runnable longPressed = new Runnable() {
-        public void run() {
-            Log.i("info", "LongPress");
-            Intent pauseIntent = new Intent(getContext(), PauseActivity.class);
-            getContext().startActivity(pauseIntent);
+        @Override public void run() {
+
+            canDraw = false;
+            if (thread != null) thread = null;
+
+            Context ctx = getContext();
+            if (ctx instanceof Activity) {
+                ((Activity) ctx).finish();
+            }
+
+            Intent i = new Intent(ctx, MainActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                            | Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(i);
         }
     };
 
@@ -496,15 +544,17 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     public void pause() {
         Log.i("info", "pause");
         canDraw = false;
-        thread = null;
+        if (thread != null) {
+            try { thread.join(); }
+            catch (InterruptedException ignored) {}
+            thread = null;
+        }
     }
 
     public void resume() {
         Log.i("info", "resume");
-        if (thread != null) {
-            thread.start();
-        }
-        if (thread == null) {
+
+        if (thread == null || !thread.isAlive()) {
             thread = new Thread(this);
             thread.start();
             Log.i("info", "resume thread");

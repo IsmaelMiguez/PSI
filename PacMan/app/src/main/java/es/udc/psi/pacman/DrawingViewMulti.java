@@ -2,34 +2,64 @@ package es.udc.psi.pacman;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.util.Log;
+import java.util.Arrays;
 
-/** Versión de 2 jugadores: hereda toda la lógica y amplía arrays */
 public class DrawingViewMulti extends DrawingView {
 
-    // Sobrescribe los atributos simples por arrays (solo los necesarios)
-    private int[] xPosPacman  = new int[2];
-    private int[] yPosPacman  = new int[2];
-    private int[] direction   = new int[]{4,4};
-    private int[] nextDir     = new int[]{4,4};
-    private int[] viewDir     = new int[]{2,2};
+    private static final String TAG = "PACMAN_NET";
+
+    private int[] xPosPacman = new int[]{ 8 * blockSize };
+    private int[] yPosPacman = new int[]{13 * blockSize };
+    private int[] direction  = new int[]{ 4 };
+    private int[] nextDir    = new int[]{ 4 };
+    private int[] viewDir    = new int[]{ 2 };
 
     public DrawingViewMulti(Context ctx) { super(ctx); }
 
-    /* ===== API pública para ExtendedPlayActivity ===== */
+
+    public void resizePlayers(int count) {
+
+        int old = xPosPacman.length;                 // tamaño anterior
+
+        xPosPacman = Arrays.copyOf(xPosPacman, count);
+        yPosPacman = Arrays.copyOf(yPosPacman, count);
+        direction  = Arrays.copyOf(direction , count);
+        nextDir    = Arrays.copyOf(nextDir   , count);
+        viewDir    = Arrays.copyOf(viewDir   , count);
+
+        for (int i = old; i < count; i++) {          // sólo las nuevas
+            xPosPacman[i] = 8 * blockSize;           // misma casilla “spawn”
+            yPosPacman[i] = 13 * blockSize;
+            direction [i] = 4;                       // parado
+            nextDir  [i] = 4;
+            viewDir  [i] = 2;                        // mirando abajo
+        }
+    }
+
+
     public void setNextDirection(int player, int dir) {
-        if (player>=0 && player<2) nextDir[player] = dir;
+        if (player >= 0 && player < nextDir.length) {
+            nextDir[player] = dir;
+            Log.i(TAG, "[VIEW] nextDir[" + player + "] = " + dir);
+        }
     }
 
-    /* ====== Sobrescribe los métodos que mueven/dibujan ====== */
 
-    @Override public void drawPacman(Canvas c) {
-        for (int i=0;i<2;i++) super.drawSinglePacman(
-                c, viewDir[i], xPosPacman[i], yPosPacman[i]);
+    @Override
+    public void drawPacman(Canvas c) {
+        for (int i = 0; i < xPosPacman.length; i++) {
+            super.drawSinglePacman(c, viewDir[i], xPosPacman[i], yPosPacman[i]);
+        }
     }
 
-    @Override public void movePacman(Canvas c) {
-        for (int i=0;i<2;i++) super.moveSinglePacman(
-                c,i,xPosPacman,yPosPacman,direction,nextDir,viewDir);
+    @Override
+    public void movePacman(Canvas c) {
+        for (int i = 0; i < xPosPacman.length; i++) {
+            super.moveSinglePacman(c, i,
+                    xPosPacman, yPosPacman,
+                    direction,  nextDir,
+                    viewDir);
+        }
     }
-
 }
