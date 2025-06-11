@@ -1,47 +1,34 @@
 package es.udc.psi.pacman;
 
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-
-import androidx.activity.EdgeToEdge;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class Controller extends AppCompatActivity {
 
-    private static final String TAG = "PacmanController";
+    private UdpClient net;    private int myId = -1;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_controller);
+    @Override protected void onCreate(Bundle s){
+        super.onCreate(s); setContentView(R.layout.activity_controller);
 
-        // Aplica el padding para el sistema (status bar, navigation bar)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.controller), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        String ipRaw = getIntent().getStringExtra("HOST_IP");
+        String ip = ipRaw.split(":")[0];
+        Toast.makeText(this,"Conectando a "+ip+"…",Toast.LENGTH_SHORT).show();
 
-        // Inicializa botones y asigna eventos
-        Button btnUp = findViewById(R.id.btnUp);
-        Button btnDown = findViewById(R.id.btnDown);
-        Button btnLeft = findViewById(R.id.btnLeft);
-        Button btnRight = findViewById(R.id.btnRight);
+        try {
+            net = new UdpClient(ip, id -> runOnUiThread(() -> {
+                myId = id;
+                Toast.makeText(this,"Soy jugador "+id,Toast.LENGTH_SHORT).show();
+            }));
+        } catch (Exception e){
+            Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show();
+            finish(); return;
+        }
 
-        btnUp.setOnClickListener(v -> move("UP"));
-        btnDown.setOnClickListener(v -> move("DOWN"));
-        btnLeft.setOnClickListener(v -> move("LEFT"));
-        btnRight.setOnClickListener(v -> move("RIGHT"));
+        findViewById(R.id.btnUp)   .setOnClickListener(v->net.sendDir(myId,0));
+        findViewById(R.id.btnRight).setOnClickListener(v->net.sendDir(myId,1));
+        findViewById(R.id.btnDown) .setOnClickListener(v->net.sendDir(myId,2));
+        findViewById(R.id.btnLeft) .setOnClickListener(v->net.sendDir(myId,3));
     }
-
-    private void move(String direction) {
-        // Aquí podrías comunicarte con el motor del juego o enviar eventos
-        Log.d(TAG, "Direction pressed: " + direction);
-    }
+    @Override protected void onDestroy(){ if(net!=null) net.close(); super.onDestroy();}
 }
