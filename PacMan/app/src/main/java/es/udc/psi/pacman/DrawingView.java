@@ -12,12 +12,12 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
 import android.util.AttributeSet;
-import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Toast;
 
 public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.Callback {
     private Thread thread;
@@ -35,8 +35,8 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     private long frameTicker;               // Current time since last frame has been drawn
     protected int xPosPacman;                 // x-axis position of pacman
     protected int yPosPacman;                 // y-axis position of pacman
-    private int xPosGhost;                  // x-axis position of ghost
-    private int yPosGhost;                  // y-axis position of ghost
+    protected int xPosGhost;                  // x-axis position of ghost
+    protected int yPosGhost;                  // y-axis position of ghost
     int xDistance;
     int yDistance;
     private float x1, x2, y1, y2;           // Initial/Final positions of swipe
@@ -48,7 +48,16 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     private int screenWidth;                // Width of the phone screen
     protected int blockSize;                  // Size of a block on the map
     public static int LONG_PRESS_TIME=750;  // Time in milliseconds
-    private int currentScore = 0;           //Current game score
+    protected int currentScore = 0;           //Current game score
+    protected static final int GHOST_DAMAGE   = 200;
+    protected static final int RESPAWN_X      = 8;
+    protected static final int RESPAWN_Y      = 13;
+    protected static final int MAX_LIVES    = 5;
+    protected int   lives[]   = { MAX_LIVES };
+    protected Paint textPaint = new Paint();
+    private final short[][] originalLevel =
+            new short[18][17];
+    private int pelletsLeft;
     final Handler handler = new Handler();
 
 
@@ -99,6 +108,18 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
         xPosPacman = 8 * blockSize;
         yPosPacman = 13 * blockSize;
 
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(blockSize);
+        textPaint.setAntiAlias(true);
+
+        for (int i = 0; i < 18; i++) {
+            for (int j = 0; j < 17; j++) {
+                originalLevel[i][j] = leveldata1[i][j];
+                if ((leveldata1[i][j] & 16) != 0) pelletsLeft++;   // cuenta pellets
+            }
+        }
+
+
         SharedPreferences prefs = context.getSharedPreferences("info", Context.MODE_PRIVATE);
         useButtonControls = prefs.getBoolean("use_button_controls", false);
 
@@ -128,6 +149,8 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
                 // Moves the pacman based on his direction
                 movePacman(canvas);
 
+                checkCollisionSingle();
+
                 // Draw the pellets
                 drawPellets(canvas);
 
@@ -154,6 +177,7 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
         String formattedScore = String.format("%05d", currentScore);
         String score = "Score : " + formattedScore;
         canvas.drawText(score, 11 * blockSize, 2 * blockSize - 10, paint);
+        canvas.drawText("Lives : " + lives[0], 0, blockSize * 3 - 10, textPaint);
     }
 
     public void moveGhost(Canvas canvas) {
@@ -291,6 +315,7 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
             if ((ch & 16) != 0) {
                 leveldata1[y / blockSize][x / blockSize] = (short) (ch ^ 16);
                 currentScore += 10;
+                if (--pelletsLeft == 0) resetPellets();
             }
 
             // *buffer* de dirección
@@ -347,6 +372,51 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
         nextDirection= nd[0];
         viewDirection= vd[0];
     }
+
+    protected boolean intersects(int x1,int y1,int x2,int y2){
+        int s = blockSize;               // el sprite es cuadrado
+        return Math.abs(x1-x2) < 0.6*s && Math.abs(y1-y2) < 0.6*s;
+    }
+
+    private void checkCollisionSingle() {
+        if (intersects(xPosPacman, yPosPacman, xPosGhost, yPosGhost)) {
+
+
+            currentScore = Math.max(0, currentScore - GHOST_DAMAGE);
+
+
+            // paint.setAlpha(120);
+            // drawSinglePacman(...)
+
+            if (--lives[0] == 0) {
+                gameOver();
+                return;
+            }
+
+
+            xPosPacman = RESPAWN_X * blockSize;
+            yPosPacman = RESPAWN_Y * blockSize;
+            direction      = 4;
+            nextDirection  = 4;
+            viewDirection  = 2;
+        }
+    }
+
+    protected void gameOver() {
+        /* muestra Toast en el hilo de UI y vuelve a MainActivity */
+        post(() -> {
+            Context ctx = getContext();
+            Toast.makeText(ctx,
+                    "Game Over. Puntuación obtenida: " + currentScore,
+                    Toast.LENGTH_LONG).show();
+
+            if (ctx instanceof Activity) ((Activity) ctx).finish();
+            ctx.startActivity(new Intent(ctx, MainActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                            | Intent.FLAG_ACTIVITY_NEW_TASK));
+        });
+    }
+
 
 
     private void drawArrowIndicators(Canvas canvas) {
@@ -682,9 +752,6 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     }
 
 
-
-
-
     final short leveldata1[][] = new short[][]{
             {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
             {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -705,4 +772,17 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
             {21, 0, 0, 0, 0, 0, 0, 21, 0, 21, 0, 0, 0, 0, 0, 0, 21},
             {25, 26, 26, 26, 26, 26, 26, 24, 26, 24, 26, 26, 26, 26, 26, 26, 28},
     };
+
+    private void resetPellets() {
+        pelletsLeft = 0;
+        for (int i = 0; i < 18; i++) {
+            for (int j = 0; j < 17; j++) {
+                leveldata1[i][j] = originalLevel[i][j];  // restaura bit 16
+                if ((originalLevel[i][j] & 16) != 0) pelletsLeft++;
+            }
+        }
+        Log.i("info", "¡Pellets repuestos!");
+    }
+
+
 }

@@ -35,6 +35,8 @@ public class DrawingViewMulti extends DrawingView {
             nextDir  [i] = 4;
             viewDir  [i] = 2;                        // mirando abajo
         }
+        lives = Arrays.copyOf(lives, count);
+        for (int i = old; i < count; i++) lives[i] = MAX_LIVES;
     }
 
 
@@ -50,6 +52,7 @@ public class DrawingViewMulti extends DrawingView {
     public void drawPacman(Canvas c) {
         for (int i = 0; i < xPosPacman.length; i++) {
             super.drawSinglePacman(c, viewDir[i], xPosPacman[i], yPosPacman[i]);
+            c.drawText("♥"+lives[i], xPosPacman[i], yPosPacman[i] - 4, textPaint);
         }
     }
 
@@ -60,6 +63,34 @@ public class DrawingViewMulti extends DrawingView {
                     xPosPacman, yPosPacman,
                     direction,  nextDir,
                     viewDir);
-        }
+
+            if (intersects(xPosPacman[i], yPosPacman[i], xPosGhost, yPosGhost)) {
+
+
+                currentScore = Math.max(0, currentScore - GHOST_DAMAGE);
+
+                if (--lives[i] == 0) {
+
+                    lives[i]       = 0;
+                    xPosPacman[i]  = -9999;
+                    yPosPacman[i]  = -9999;
+                    direction [i]  = 4;
+                    nextDir   [i]  = 4;
+
+
+                    boolean alguienVivo = false;
+                    for (int v : lives) if (v > 0) { alguienVivo = true; break; }
+                    if (!alguienVivo) { gameOver(); return; }
+                    continue;
+                }
+
+
+
+                xPosPacman[i] = RESPAWN_X * blockSize;
+                yPosPacman[i] = RESPAWN_Y * blockSize;
+                direction [i] = 4;
+                nextDir  [i] = 4;
+                viewDir  [i] = 2;
+        }}
     }
 }
