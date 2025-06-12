@@ -9,13 +9,15 @@ public class DrawingViewMulti extends DrawingView {
 
     private static final String TAG = "PACMAN_NET";
 
-    private int[] xPosPacman = new int[]{ 8 * blockSize };
-    private int[] yPosPacman = new int[]{13 * blockSize };
-    private int[] direction  = new int[]{ 4 };
-    private int[] nextDir    = new int[]{ 4 };
-    private int[] viewDir    = new int[]{ 2 };
+    private int[] xPosPacman = new int[]{8 * blockSize};
+    private int[] yPosPacman = new int[]{13 * blockSize};
+    private int[] direction = new int[]{4};
+    private int[] nextDir = new int[]{4};
+    private int[] viewDir = new int[]{2};
 
-    public DrawingViewMulti(Context ctx) { super(ctx); }
+    public DrawingViewMulti(Context ctx) {
+        super(ctx);
+    }
 
 
     public void resizePlayers(int count) {
@@ -24,16 +26,16 @@ public class DrawingViewMulti extends DrawingView {
 
         xPosPacman = Arrays.copyOf(xPosPacman, count);
         yPosPacman = Arrays.copyOf(yPosPacman, count);
-        direction  = Arrays.copyOf(direction , count);
-        nextDir    = Arrays.copyOf(nextDir   , count);
-        viewDir    = Arrays.copyOf(viewDir   , count);
+        direction = Arrays.copyOf(direction, count);
+        nextDir = Arrays.copyOf(nextDir, count);
+        viewDir = Arrays.copyOf(viewDir, count);
 
         for (int i = old; i < count; i++) {          // sólo las nuevas
             xPosPacman[i] = 8 * blockSize;           // misma casilla “spawn”
             yPosPacman[i] = 13 * blockSize;
-            direction [i] = 4;                       // parado
-            nextDir  [i] = 4;
-            viewDir  [i] = 2;                        // mirando abajo
+            direction[i] = 4;                       // parado
+            nextDir[i] = 4;
+            viewDir[i] = 2;                        // mirando abajo
         }
         lives = Arrays.copyOf(lives, count);
         for (int i = old; i < count; i++) lives[i] = MAX_LIVES;
@@ -52,7 +54,7 @@ public class DrawingViewMulti extends DrawingView {
     public void drawPacman(Canvas c) {
         for (int i = 0; i < xPosPacman.length; i++) {
             super.drawSinglePacman(c, viewDir[i], xPosPacman[i], yPosPacman[i]);
-            c.drawText("♥"+lives[i], xPosPacman[i], yPosPacman[i] - 4, textPaint);
+            c.drawText("♥" + lives[i], xPosPacman[i], yPosPacman[i] - 4, textPaint);
         }
     }
 
@@ -61,7 +63,7 @@ public class DrawingViewMulti extends DrawingView {
         for (int i = 0; i < xPosPacman.length; i++) {
             super.moveSinglePacman(c, i,
                     xPosPacman, yPosPacman,
-                    direction,  nextDir,
+                    direction, nextDir,
                     viewDir);
 
             if (intersects(xPosPacman[i], yPosPacman[i], xPosGhost, yPosGhost)) {
@@ -71,26 +73,51 @@ public class DrawingViewMulti extends DrawingView {
 
                 if (--lives[i] == 0) {
 
-                    lives[i]       = 0;
-                    xPosPacman[i]  = -9999;
-                    yPosPacman[i]  = -9999;
-                    direction [i]  = 4;
-                    nextDir   [i]  = 4;
+                    lives[i] = 0;
+                    xPosPacman[i] = -9999;
+                    yPosPacman[i] = -9999;
+                    direction[i] = 4;
+                    nextDir[i] = 4;
 
 
                     boolean alguienVivo = false;
-                    for (int v : lives) if (v > 0) { alguienVivo = true; break; }
-                    if (!alguienVivo) { gameOver(); return; }
+                    for (int v : lives)
+                        if (v > 0) {
+                            alguienVivo = true;
+                            break;
+                        }
+                    if (!alguienVivo) {
+                        gameOver();
+                        return;
+                    }
                     continue;
                 }
 
 
-
                 xPosPacman[i] = RESPAWN_X * blockSize;
                 yPosPacman[i] = RESPAWN_Y * blockSize;
-                direction [i] = 4;
-                nextDir  [i] = 4;
-                viewDir  [i] = 2;
-        }}
+                direction[i] = 4;
+                nextDir[i] = 4;
+                viewDir[i] = 2;
+
+            }
+        }
+        int bestIdx = -1;
+        int bestDst = Integer.MAX_VALUE;
+
+        for (int i = 0; i < xPosPacman.length; i++) {
+            if (lives[i] <= 0) continue;
+            int dist = Math.abs(xPosGhost - xPosPacman[i])
+                    + Math.abs(yPosGhost - yPosPacman[i]);
+            if (dist < bestDst) {
+                bestDst = dist;
+                bestIdx = i;
+            }
+        }
+
+        if (bestIdx != -1) {
+            super.xPosPacman = xPosPacman[bestIdx];
+            super.yPosPacman = yPosPacman[bestIdx];
+        }
     }
 }

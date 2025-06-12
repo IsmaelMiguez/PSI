@@ -19,6 +19,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.Callback {
     private Thread thread;
     private SurfaceHolder holder;
@@ -58,7 +61,12 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     private final short[][] originalLevel =
             new short[18][17];
     private int pelletsLeft;
+    private static final int[] DX = { 0,  1, 0, -1 };   // up, right, down, left
+    private static final int[] DY = {-1,  0, 1,  0 };
+    private int lastGhostDir = 4;
     final Handler handler = new Handler();
+    List<Integer> freeDirs = new ArrayList<>(4);
+
 
 
     public DrawingView(Context context) {
@@ -180,106 +188,43 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
         canvas.drawText("Lives : " + lives[0], 0, blockSize * 3 - 10, textPaint);
     }
 
+    @SuppressWarnings("ConstantConditions")
     public void moveGhost(Canvas canvas) {
-        short ch;
 
-        xDistance = xPosPacman - xPosGhost;
-        yDistance = yPosPacman - yPosGhost;
+        if (xPosGhost >= blockSize * 17) xPosGhost = 0;
+        if (xPosGhost < 0)               xPosGhost = blockSize * 17;
 
-        if ((xPosGhost % blockSize == 0) && (yPosGhost % blockSize == 0)) {
-            ch = leveldata1[yPosGhost / blockSize][xPosGhost / blockSize];
+        if (xPosGhost % blockSize == 0 && yPosGhost % blockSize == 0) {
 
-            if (xPosGhost >= blockSize * 17) {
-                xPosGhost = 0;
-            }
-            if (xPosGhost < 0) {
-                xPosGhost = blockSize * 17;
-            }
+            short ch = leveldata1[yPosGhost / blockSize][xPosGhost / blockSize];
 
+            freeDirs.clear();
+            if ((ch & 2) == 0) freeDirs.add(0); // up
+            if ((ch & 4) == 0) freeDirs.add(1); // right
+            if ((ch & 8) == 0) freeDirs.add(2); // down
+            if ((ch & 1) == 0) freeDirs.add(3); // left
 
-            if (xDistance >= 0 && yDistance >= 0) { // Move right and down
-                if ((ch & 4) == 0 && (ch & 8) == 0) {
-                    if (Math.abs(xDistance) > Math.abs(yDistance)) {
-                        ghostDirection = 1;
-                    } else {
-                        ghostDirection = 2;
-                    }
-                }
-                else if ((ch & 4) == 0) {
-                    ghostDirection = 1;
-                }
-                else if ((ch & 8) == 0) {
-                    ghostDirection = 2;
-                }
-                else
-                    ghostDirection = 3;
+            int best   = -1;
+            int bestD  = Integer.MAX_VALUE;
+
+            for (int d : freeDirs) {
+
+                if (freeDirs.size() > 1 && (d + 2) % 4 == lastGhostDir) continue;
+
+                int nx = xPosGhost + DX[d]*blockSize;
+                int ny = yPosGhost + DY[d]*blockSize;
+                int dist = Math.abs(nx - xPosPacman) + Math.abs(ny - yPosPacman);
+
+                if (dist < bestD) { bestD = dist; best = d; }
             }
-            if (xDistance >= 0 && yDistance <= 0) { // Move right and up
-                if ((ch & 4) == 0 && (ch & 2) == 0 ) {
-                    if (Math.abs(xDistance) > Math.abs(yDistance)) {
-                        ghostDirection = 1;
-                    } else {
-                        ghostDirection = 0;
-                    }
-                }
-                else if ((ch & 4) == 0) {
-                    ghostDirection = 1;
-                }
-                else if ((ch & 2) == 0) {
-                    ghostDirection = 0;
-                }
-                else ghostDirection = 2;
-            }
-            if (xDistance <= 0 && yDistance >= 0) { // Move left and down
-                if ((ch & 1) == 0 && (ch & 8) == 0) {
-                    if (Math.abs(xDistance) > Math.abs(yDistance)) {
-                        ghostDirection = 3;
-                    } else {
-                        ghostDirection = 2;
-                    }
-                }
-                else if ((ch & 1) == 0) {
-                    ghostDirection = 3;
-                }
-                else if ((ch & 8) == 0) {
-                    ghostDirection = 2;
-                }
-                else ghostDirection = 1;
-            }
-            if (xDistance <= 0 && yDistance <= 0) { // Move left and up
-                if ((ch & 1) == 0 && (ch & 2) == 0) {
-                    if (Math.abs(xDistance) > Math.abs(yDistance)) {
-                        ghostDirection = 3;
-                    } else {
-                        ghostDirection = 0;
-                    }
-                }
-                else if ((ch & 1) == 0) {
-                    ghostDirection = 3;
-                }
-                else if ((ch & 2) == 0) {
-                    ghostDirection = 0;
-                }
-                else ghostDirection = 2;
-            }
-            // Handles wall collisions
-            if ( (ghostDirection == 3 && (ch & 1) != 0) ||
-                    (ghostDirection == 1 && (ch & 4) != 0) ||
-                    (ghostDirection == 0 && (ch & 2) != 0) ||
-                    (ghostDirection == 2 && (ch & 8) != 0) ) {
-                ghostDirection = 4;
-            }
+            if (best == -1) best = freeDirs.get(0);   // sólo quedaba la inversa
+
+            ghostDirection = best;
+            lastGhostDir   = best;
         }
 
-        if (ghostDirection == 0) {
-            yPosGhost += -blockSize / 20;
-        } else if (ghostDirection == 1) {
-            xPosGhost += blockSize / 20;
-        } else if (ghostDirection == 2) {
-            yPosGhost += blockSize / 20;
-        } else if (ghostDirection == 3) {
-            xPosGhost += -blockSize / 20;
-        }
+        xPosGhost += DX[ghostDirection] * blockSize / 20;
+        yPosGhost += DY[ghostDirection] * blockSize / 20;
 
         canvas.drawBitmap(ghostBitmap, xPosGhost, yPosGhost, paint);
     }
