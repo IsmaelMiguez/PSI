@@ -20,7 +20,7 @@
             android:id="@+id/btnUp"
             android:layout_width="60dp"
             android:layout_height="60dp"
-            android:text="↑" />
+            android:text="@string/arrow_up" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -31,7 +31,7 @@
                 android:id="@+id/btnLeft"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:text="←" />
+                android:text="@string/arrow_left" />
 
             <View android:layout_width="60dp" android:layout_height="60dp" />
 
@@ -39,13 +39,13 @@
                 android:id="@+id/btnRight"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:text="→" />
+                android:text="@string/arrow_right" />
         </LinearLayout>
 
         <Button
             android:id="@+id/btnDown"
             android:layout_width="60dp"
             android:layout_height="60dp"
-            android:text="↓" />
+            android:text="@string/arrow_down" />
     </LinearLayout>
 </FrameLayout>

@@ -26,12 +26,19 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import es.udc.psi.pacman.data.FirestoreManager;
 
 public class SettingsActivity extends AppCompatActivity {
 
     private static final String TAG = "SettingsActivity";
-    private static final String PREFS_NAME = "PacManPrefs";
     
     // UI Components
     private TextView tvUserInfo;
@@ -41,35 +48,31 @@ public class SettingsActivity extends AppCompatActivity {
     private Switch switchMusic, switchSoundEffects, switchVibration;
     private RadioGroup rgControlType, rgDifficulty;
     private RadioButton rbButtons, rbSwipe, rbEasy, rbNormal, rbHard;
-    private Switch controlSwitch;  // Control switch de HelpActivity
     
     // Firebase
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     
-    // Preferences
-    private SharedPreferences settings;
-    private SharedPreferences controlPrefs;  // Para el switch de controles de HelpActivity
+    // Settings Manager - única fuente de verdad
+    private SettingsManager settingsManager;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         
+        // Inicializar SettingsManager PRIMERO
+        settingsManager = SettingsManager.getInstance(this);
+        
         // Inicializar Firebase Auth y Firestore
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
-        
-        // Inicializar SharedPreferences
-        settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        controlPrefs = getSharedPreferences("info", MODE_PRIVATE);  // Preferencias de Help
         
         // Vincular vistas
         initViews();
         
         // Verificar si hay usuario logueado
         if (mAuth.getCurrentUser() == null) {
-            // Redirigir al login si no hay usuario
             startLoginActivity();
             return;
         }
@@ -82,9 +85,6 @@ public class SettingsActivity extends AppCompatActivity {
         
         // Mostrar información del usuario
         displayUserInfo();
-        
-        // Configurar el switch de control de la sección de ayuda
-        setupHelpControls();
     }
     
     private void initViews() {
@@ -111,9 +111,6 @@ public class SettingsActivity extends AppCompatActivity {
         rbEasy = findViewById(R.id.rbEasy);
         rbNormal = findViewById(R.id.rbNormal);
         rbHard = findViewById(R.id.rbHard);
-        
-        // Help section
-        controlSwitch = findViewById(R.id.controlswitch);
     }
     
     private void setUpListeners() {
@@ -145,14 +142,10 @@ public class SettingsActivity extends AppCompatActivity {
             }
             
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                // No se necesita implementación
-            }
+            public void onStartTrackingTouch(SeekBar seekBar) {}
             
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // No se necesita implementación
-            }
+            public void onStopTrackingTouch(SeekBar seekBar) {}
         });
         
         // Pausar/reanudar música
@@ -165,29 +158,22 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    private void setupHelpControls() {
-        // Cargar preferencia guardada
-        boolean isButtonMode = controlPrefs.getBoolean("use_button_controls", false);
-        controlSwitch.setChecked(isButtonMode);
-
-        // Configurar listener
-        controlSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            SharedPreferences.Editor editor = controlPrefs.edit();
-            editor.putBoolean("use_button_controls", isChecked);
-            editor.apply();
+        
+        // Listener para cambios en el tipo de control
+        rgControlType.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean isButtons = checkedId == R.id.rbButtons;
+            Log.d(TAG, "Control type changed to: " + (isButtons ? "buttons" : "swipe"));
         });
     }
     
     private void loadSettings() {
-        // Cargar configuraciones de SharedPreferences
-        int musicVolume = settings.getInt("musicVolume", 100);
-        boolean musicEnabled = settings.getBoolean("musicEnabled", true);
-        boolean soundEffectsEnabled = settings.getBoolean("soundEffectsEnabled", true);
-        boolean vibrationEnabled = settings.getBoolean("vibrationEnabled", true);
-        String controlType = settings.getString("controlType", "buttons");
-        String difficulty = settings.getString("difficulty", "normal");
+        // Cargar configuraciones usando SettingsManager
+        int musicVolume = settingsManager.getMusicVolume();
+        boolean musicEnabled = settingsManager.isMusicEnabled();
+        boolean soundEffectsEnabled = settingsManager.areSoundEffectsEnabled();
+        boolean vibrationEnabled = settingsManager.isVibrationEnabled();
+        boolean isButtonControl = settingsManager.isButtonControl();
+        String difficulty = settingsManager.getDifficulty();
         
         // Aplicar configuraciones a la UI
         sbMusicVolume.setProgress(musicVolume);
@@ -196,7 +182,7 @@ public class SettingsActivity extends AppCompatActivity {
         switchVibration.setChecked(vibrationEnabled);
         
         // Control type
-        if ("buttons".equals(controlType)) {
+        if (isButtonControl) {
             rbButtons.setChecked(true);
         } else {
             rbSwipe.setChecked(true);
@@ -214,20 +200,20 @@ public class SettingsActivity extends AppCompatActivity {
                 rbNormal.setChecked(true);
                 break;
         }
+        
+        Log.d(TAG, "Settings loaded - Control type: " + (isButtonControl ? "buttons" : "swipe"));
     }
     
     private void saveSettings() {
-        SharedPreferences.Editor editor = settings.edit();
-        
-        // Guardar configuraciones actuales
-        editor.putInt("musicVolume", sbMusicVolume.getProgress());
-        editor.putBoolean("musicEnabled", switchMusic.isChecked());
-        editor.putBoolean("soundEffectsEnabled", switchSoundEffects.isChecked());
-        editor.putBoolean("vibrationEnabled", switchVibration.isChecked());
+        // Guardar configuraciones usando SettingsManager
+        settingsManager.setMusicVolume(sbMusicVolume.getProgress());
+        settingsManager.setMusicEnabled(switchMusic.isChecked());
+        settingsManager.setSoundEffectsEnabled(switchSoundEffects.isChecked());
+        settingsManager.setVibrationEnabled(switchVibration.isChecked());
         
         // Control type
         String controlType = rbButtons.isChecked() ? "buttons" : "swipe";
-        editor.putString("controlType", controlType);
+        settingsManager.setControlType(controlType);
         
         // Difficulty
         String difficulty;
@@ -238,10 +224,9 @@ public class SettingsActivity extends AppCompatActivity {
         } else {
             difficulty = "normal";
         }
-        editor.putString("difficulty", difficulty);
+        settingsManager.setDifficulty(difficulty);
         
-        editor.apply();
-        
+        Log.d(TAG, "Settings saved - Control type: " + controlType);
         Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show();
     }
     
@@ -249,19 +234,12 @@ public class SettingsActivity extends AppCompatActivity {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             if (user.isAnonymous()) {
-                // Si es usuario invitado
                 tvUserInfo.setText(getString(R.string.guest_user_info));
-                
-                // Ocultar botón de eliminar cuenta para invitados
                 btnDeleteAccount.setVisibility(View.GONE);
             } else {
-                // Si es usuario registrado
                 String displayName = user.getDisplayName();
                 String email = user.getEmail();
-                
                 tvUserInfo.setText(getString(R.string.user_info, displayName, email));
-                
-                // Mostrar botón de eliminar cuenta para usuarios registrados
                 btnDeleteAccount.setVisibility(View.VISIBLE);
             }
         }
@@ -283,15 +261,13 @@ public class SettingsActivity extends AppCompatActivity {
         builder.setTitle(getString(R.string.delete_account));
         builder.setMessage(getString(R.string.confirm_delete_account));
         
-        // Si es un usuario por email, solicitar reautenticación
         if (!user.isAnonymous()) {
             builder.setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
-                showReauthenticateDialog();
+                showGameDataDeletionDialog();
             });
         } else {
-            // Para usuarios invitados, eliminar directamente
             builder.setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
-                deleteAccount();
+                showGameDataDeletionDialog();
             });
         }
         
@@ -301,38 +277,88 @@ public class SettingsActivity extends AppCompatActivity {
         
         builder.show();
     }
-    
-    private void showReauthenticateDialog() {
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user == null || user.getEmail() == null) return;
-        
+
+    private void showGameDataDeletionDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getString(R.string.reauth_required));
+        builder.setTitle("Eliminar datos de juego");
+        builder.setMessage("¿Deseas eliminar también todas tus partidas y tu posición en los rankings?\n\nEsta acción no se puede deshacer.");
         
-        // Configurar un campo para la contraseña
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        input.setHint(getString(R.string.password));
-        
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 20);
-        layout.addView(input);
-        
-        builder.setView(layout);
-        
-        builder.setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
-            String password = input.getText().toString().trim();
-            if (!password.isEmpty()) {
-                reauthenticateUser(user.getEmail(), password);
+        builder.setPositiveButton("Sí, eliminar todo", (dialog, which) -> {
+            if (mAuth.getCurrentUser() != null && !mAuth.getCurrentUser().isAnonymous()) {
+                showReauthenticateDialog(true);
+            } else {
+                deleteAccountWithGameData(true);
             }
         });
         
-        builder.setNegativeButton(getString(R.string.cancel), (dialog, which) -> {
+        builder.setNegativeButton("No, solo la cuenta", (dialog, which) -> {
+            if (mAuth.getCurrentUser() != null && !mAuth.getCurrentUser().isAnonymous()) {
+                showReauthenticateDialog(false);
+            } else {
+                deleteAccountWithGameData(false);
+            }
+        });
+        
+        builder.setNeutralButton("Cancelar", (dialog, which) -> {
             dialog.cancel();
         });
         
         builder.show();
+    }
+    
+    private void showReauthenticateDialog(boolean deleteGameData) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null || user.isAnonymous()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.reauthenticate));
+        builder.setMessage(getString(R.string.enter_password_to_delete));
+
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        input.setHint(getString(R.string.password));
+        builder.setView(input);
+
+        builder.setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
+            String password = input.getText().toString().trim();
+            if (!password.isEmpty()) {
+                reauthenticateAndDelete(password, deleteGameData);
+            } else {
+                Toast.makeText(this, getString(R.string.password_required), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton(getString(R.string.cancel), (dialog, which) -> {
+            dialog.cancel();
+        });
+
+        builder.show();
+    }
+
+    private void reauthenticateAndDelete(String password, boolean deleteGameData) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+        
+        String email = user.getEmail();
+        if (email == null) {
+            Toast.makeText(this, "Error: No se pudo obtener el email del usuario", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        progressBar.setVisibility(View.VISIBLE);
+        
+        AuthCredential credential = EmailAuthProvider.getCredential(email, password);
+        
+        user.reauthenticate(credential)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        deleteAccountWithGameData(deleteGameData);
+                    } else {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(this, getString(R.string.error_auth_failed) + ": " + 
+                                task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
     
     private void reauthenticateUser(String email, String password) {
@@ -346,10 +372,8 @@ public class SettingsActivity extends AppCompatActivity {
         user.reauthenticate(credential)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        // Reautenticación exitosa, proceder a eliminar la cuenta
                         deleteAccount();
                     } else {
-                        // Error en la reautenticación
                         progressBar.setVisibility(View.GONE);
                         Toast.makeText(this, getString(R.string.error_auth_failed) + ": " + 
                                 task.getException().getMessage(), Toast.LENGTH_SHORT).show();
@@ -361,40 +385,150 @@ public class SettingsActivity extends AppCompatActivity {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) return;
         
+        String userId = user.getUid();
         progressBar.setVisibility(View.VISIBLE);
         
-        // Eliminar primero la cuenta de autenticación
-        user.delete()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        // Eliminar los datos de Firestore después de eliminar la autenticación
-                        // (Esto puede fallar si las reglas no lo permiten, pero el usuario ya estará eliminado)
-                        try {
-                            db.collection("users").document(user.getUid())
-                                    .delete()
-                                    .addOnSuccessListener(aVoid -> {
-                                        Log.d(TAG, "User data deleted from Firestore");
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        // Esto podría fallar, pero no bloqueamos el proceso
-                                        Log.w(TAG, "Error deleting user data", e);
-                                    });
-                        } catch (Exception e) {
-                            Log.w(TAG, "Error trying to delete user data", e);
-                        }
+        db.collection("users").document(userId)
+                .delete()
+                .addOnCompleteListener(userDataTask -> {
+                    user.delete()
+                            .addOnCompleteListener(authTask -> {
+                                progressBar.setVisibility(View.GONE);
+                                
+                                if (authTask.isSuccessful()) {
+                                    Toast.makeText(SettingsActivity.this,
+                                            getString(R.string.account_deleted),
+                                            Toast.LENGTH_SHORT).show();
+                                    startLoginActivity();
+                                } else {
+                                    Toast.makeText(SettingsActivity.this,
+                                            getString(R.string.error_delete_account) + ": " +
+                                                    authTask.getException().getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                });
+    }
 
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(SettingsActivity.this,
-                                getString(R.string.account_deleted),
-                                Toast.LENGTH_SHORT).show();
-                        startLoginActivity();
+    private void deleteAccountWithGameData(boolean deleteGameData) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+        
+        progressBar.setVisibility(View.VISIBLE);
+        
+        if (deleteGameData) {
+            eliminarDatosDeJuegoCompletamente(user.getUid());
+        } else {
+            proceedWithAccountDeletion(user);
+        }
+    }
+
+    private void eliminarDatosDeJuegoCompletamente(String userId) {
+        db.collection("puntuaciones")
+                .whereEqualTo("idJugador", userId)
+                .get()
+                .addOnCompleteListener(puntuacionesTask -> {
+                    if (puntuacionesTask.isSuccessful()) {
+                        Log.d(TAG, "Encontradas " + puntuacionesTask.getResult().size() + " puntuaciones");
+                        eliminarPuntuacionesIndividualmente(puntuacionesTask.getResult().getDocuments(), userId);
                     } else {
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(SettingsActivity.this,
-                                getString(R.string.error_delete_account) + ": " +
-                                        task.getException().getMessage(),
-                                Toast.LENGTH_SHORT).show();
+                        Log.w(TAG, "Error obteniendo puntuaciones", puntuacionesTask.getException());
+                        proceedWithAccountDeletion(mAuth.getCurrentUser());
                     }
+                });
+    }
+
+    private void eliminarPuntuacionesIndividualmente(List<DocumentSnapshot> puntuaciones, String userId) {
+        AtomicInteger pendingDeletions = new AtomicInteger(puntuaciones.size());
+        Set<String> partidasClasicas = new HashSet<>();
+        
+        if (puntuaciones.isEmpty()) {
+            eliminarPartidasClasicas(partidasClasicas, userId);
+            return;
+        }
+        
+        for (DocumentSnapshot puntuacion : puntuaciones) {
+            String modoJuego = puntuacion.getString("modoJuego");
+            String idPartida = puntuacion.getString("idPartida");
+            if ("clasico".equals(modoJuego) && idPartida != null) {
+                partidasClasicas.add(idPartida);
+            }
+            
+            puntuacion.getReference().delete()
+                    .addOnCompleteListener(deleteTask -> {
+                        if (deleteTask.isSuccessful()) {
+                            Log.d(TAG, "Puntuación eliminada: " + puntuacion.getId());
+                        } else {
+                            Log.w(TAG, "Error eliminando puntuación: " + puntuacion.getId());
+                        }
+                        
+                        if (pendingDeletions.decrementAndGet() == 0) {
+                            eliminarPartidasClasicas(partidasClasicas, userId);
+                        }
+                    });
+        }
+    }
+
+    private void eliminarPartidasClasicas(Set<String> partidasClasicas, String userId) {
+        AtomicInteger pendingDeletions = new AtomicInteger(partidasClasicas.size());
+        
+        Log.d(TAG, "Eliminando " + partidasClasicas.size() + " partidas clásicas");
+        
+        if (partidasClasicas.isEmpty()) {
+            proceedWithAccountDeletion(mAuth.getCurrentUser());
+            return;
+        }
+        
+        for (String partidaId : partidasClasicas) {
+            db.collection("partidas").document(partidaId)
+                    .delete()
+                    .addOnCompleteListener(deleteTask -> {
+                        if (deleteTask.isSuccessful()) {
+                            Log.d(TAG, "Partida eliminada: " + partidaId);
+                        } else {
+                            Log.w(TAG, "Error eliminando partida: " + partidaId);
+                        }
+                        
+                        if (pendingDeletions.decrementAndGet() == 0) {
+                            proceedWithAccountDeletion(mAuth.getCurrentUser());
+                        }
+                    });
+        }
+    }
+
+    private void proceedWithAccountDeletion(FirebaseUser user) {
+        if (user == null) {
+            progressBar.setVisibility(View.GONE);
+            return;
+        }
+        
+        String userId = user.getUid();
+        
+        db.collection("users").document(userId)
+                .delete()
+                .addOnCompleteListener(userDataTask -> {
+                    if (userDataTask.isSuccessful()) {
+                        Log.d(TAG, "User data deleted from users collection");
+                    } else {
+                        Log.w(TAG, "Error deleting user data from users collection", userDataTask.getException());
+                    }
+                    
+                    user.delete()
+                            .addOnCompleteListener(authTask -> {
+                                progressBar.setVisibility(View.GONE);
+                                
+                                if (authTask.isSuccessful()) {
+                                    Toast.makeText(SettingsActivity.this,
+                                            getString(R.string.account_deleted),
+                                            Toast.LENGTH_SHORT).show();
+                                    startLoginActivity();
+                                } else {
+                                    Toast.makeText(SettingsActivity.this,
+                                            getString(R.string.error_delete_account) + ": " +
+                                                    authTask.getException().getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
                 });
     }
     

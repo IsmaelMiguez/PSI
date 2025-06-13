@@ -4,8 +4,12 @@
     <string name="resume">Resume</string>
     <string name="play">New Game</string>
     <string name="help">How To Play</string>
+    <string name="rankings">Rankings</string>
 
     <string name="howToPlayLabel">HOW TO PLAY</string>
+
+    <string name="ordenado_por_puntuacion">📊 Ordenado por Puntuación</string>
+    <string name="ordenado_por_tiempo">⏱️ Ordenado por Tiempo</string>
 
 
     <string name="controlsLabel">CONTROLS</string>
@@ -32,7 +36,7 @@
     <string name="cancelar">Cancelar</string>
     <string name="_192_168_1_100">192.168.1.100</string>
 
-        <string name="welcome_guest">¡Bienvenido, Invitado!</string>
+    <string name="welcome_guest">¡Bienvenido, Invitado!</string>
     <string name="welcome_user">¡Bienvenido, %1$s!</string>
     <string name="loading_user_data">Cargando información del usuario...</string>
     <!-- Login Activity -->
@@ -81,6 +85,16 @@
     <string name="difficulty_hard">Difícil</string>
     <string name="settings_saved">Configuración guardada</string>
 
+    <!-- Account deletion -->
+    <string name="delete_game_data_title">Eliminar datos de juego</string>
+    <string name="delete_game_data_message">¿Deseas eliminar también todas tus partidas y tu posición en los rankings?\n\nEsta acción no se puede deshacer.</string>
+    <string name="yes_delete_all">Sí, eliminar todo</string>
+    <string name="no_only_account">No, solo la cuenta</string>
+    <string name="reauthenticate">Reautenticación requerida</string>
+    <string name="enter_password_to_delete">Por favor, ingresa tu contraseña para confirmar la eliminación de la cuenta</string>
+    <string name="password_required">La contraseña es requerida</string>
+    <string name="reauthentication_failed">Error de reautenticación</string>
+
     <!-- Help Activity -->
     <string name="help_section">Ayuda</string>
     <string name="help_controls_title">Controles:</string>
@@ -90,4 +104,19 @@
     <string name="help_enemies_title">Enemigos:</string>
     <string name="help_enemies_description">Cada fantasma tiene un comportamiento diferente. Blinky (rojo) te persigue directamente, Pinky (rosa) intenta emboscarte, Inky (azul) es impredecible, y Clyde (naranja) deambula por su cuenta.</string>
     <string name="help_control_switch">Usar controles con botones</string>
+
+    <string name="controls_centralized_message">Los controles se pueden cambiar desde Configuración</string>
+    <string name="swipe_controls">Controles por Gestos</string>
+    <string name="button_controls">Controles por Botones</string>
+    <string name="ranking_top_message">Toca dos veces en una pestaña para alternar entre ranking por puntuación y por tiempo</string>
+    <string name="pos">Pos</string>
+    <string name="jugador">Jugador</string>
+    <string name="puntos">Puntos</string>
+    <string name="tiempo">Tiempo</string>
+    <string name="tick">✓</string>
+    <string name="_1">1</string>
+    <string name="nombre_jugador">Nombre Jugador</string>
+    <string name="date_placeholder">01/01/2025</string>
+    <string name="points_placeholder">12345</string>
+    <string name="hour_placeholder">05:23</string>
 </resources>

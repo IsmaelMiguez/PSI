@@ -4,19 +4,25 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.os.Vibrator;
+import android.util.Log;
 
 /**
  * Clase para gestionar configuraciones globales de la aplicación.
+ * Fuente única de verdad para todas las configuraciones.
  */
 public class SettingsManager {
+    private static final String TAG = "SettingsManager";
     private static final String PREFS_NAME = "PacManPrefs";
+    private static final String HELP_PREFS_NAME = "info"; // Para compatibilidad con HelpActivity
     private static SettingsManager instance;
     private SharedPreferences preferences;
+    private SharedPreferences helpPreferences; // Para sincronización
     private Context context;
 
     private SettingsManager(Context context) {
         this.context = context.getApplicationContext();
         this.preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        this.helpPreferences = context.getSharedPreferences(HELP_PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     public static synchronized SettingsManager getInstance(Context context) {
@@ -26,11 +32,21 @@ public class SettingsManager {
         return instance;
     }
 
+    // === MÉTODOS DE AUDIO ===
+    
     /**
      * Obtiene el volumen de música establecido (0-100)
      */
     public int getMusicVolume() {
         return preferences.getInt("musicVolume", 100);
+    }
+    
+    /**
+     * Establece el volumen de música (0-100)
+     */
+    public void setMusicVolume(int volume) {
+        preferences.edit().putInt("musicVolume", volume).apply();
+        Log.d(TAG, "Music volume set to: " + volume);
     }
 
     /**
@@ -49,6 +65,14 @@ public class SettingsManager {
     public boolean isMusicEnabled() {
         return preferences.getBoolean("musicEnabled", true);
     }
+    
+    /**
+     * Establece si la música está habilitada
+     */
+    public void setMusicEnabled(boolean enabled) {
+        preferences.edit().putBoolean("musicEnabled", enabled).apply();
+        Log.d(TAG, "Music enabled set to: " + enabled);
+    }
 
     /**
      * Comprueba si los efectos de sonido están habilitados
@@ -56,12 +80,30 @@ public class SettingsManager {
     public boolean areSoundEffectsEnabled() {
         return preferences.getBoolean("soundEffectsEnabled", true);
     }
+    
+    /**
+     * Establece si los efectos de sonido están habilitados
+     */
+    public void setSoundEffectsEnabled(boolean enabled) {
+        preferences.edit().putBoolean("soundEffectsEnabled", enabled).apply();
+        Log.d(TAG, "Sound effects enabled set to: " + enabled);
+    }
 
+    // === MÉTODOS DE VIBRACIÓN ===
+    
     /**
      * Comprueba si la vibración está habilitada
      */
     public boolean isVibrationEnabled() {
         return preferences.getBoolean("vibrationEnabled", true);
+    }
+    
+    /**
+     * Establece si la vibración está habilitada
+     */
+    public void setVibrationEnabled(boolean enabled) {
+        preferences.edit().putBoolean("vibrationEnabled", enabled).apply();
+        Log.d(TAG, "Vibration enabled set to: " + enabled);
     }
 
     /**
@@ -77,25 +119,63 @@ public class SettingsManager {
         }
     }
 
+    // === MÉTODOS DE CONTROLES ===
+
     /**
-     * Obtiene el tipo de control (buttons o swipe)
+     * Obtiene el tipo de control (buttons o swipe) - con sincronización automática
      */
     public String getControlType() {
-        return preferences.getString("controlType", "buttons");
+        String controlType = preferences.getString("controlType", null);
+        
+        if (controlType == null) {
+            // Si no existe, revisar en el sistema de HelpActivity para migración
+            boolean useButtonControls = helpPreferences.getBoolean("use_button_controls", false);
+            controlType = useButtonControls ? "buttons" : "swipe";
+            
+            // Migrar al sistema principal
+            setControlType(controlType);
+            Log.d(TAG, "Migrated control type from HelpActivity: " + controlType);
+        }
+        
+        return controlType;
     }
 
     /**
-     * Comprueba si el control es por botones
+     * Comprueba si el control es por botones - con sincronización automática
      */
     public boolean isButtonControl() {
         return "buttons".equals(getControlType());
     }
 
     /**
+     * Establece el tipo de control y sincroniza automáticamente
+     */
+    public void setControlType(String controlType) {
+        // Guardar en sistema principal
+        preferences.edit().putString("controlType", controlType).apply();
+        
+        // Sincronizar con sistema de HelpActivity para compatibilidad
+        boolean isButtons = "buttons".equals(controlType);
+        helpPreferences.edit().putBoolean("use_button_controls", isButtons).apply();
+        
+        Log.d(TAG, "Control type set to: " + controlType + " (isButtons: " + isButtons + ")");
+    }
+
+    // === MÉTODOS DE DIFICULTAD ===
+
+    /**
      * Obtiene el nivel de dificultad (easy, normal, hard)
      */
     public String getDifficulty() {
         return preferences.getString("difficulty", "normal");
+    }
+    
+    /**
+     * Establece el nivel de dificultad
+     */
+    public void setDifficulty(String difficulty) {
+        preferences.edit().putString("difficulty", difficulty).apply();
+        Log.d(TAG, "Difficulty set to: " + difficulty);
     }
 
     /**

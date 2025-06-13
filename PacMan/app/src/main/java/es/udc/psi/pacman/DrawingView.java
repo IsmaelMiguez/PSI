@@ -27,6 +27,7 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     private SurfaceHolder holder;
     private boolean canDraw = true;
     private boolean useButtonControls;
+    protected GameSession gameSession;
 
     protected Paint paint;
     private Bitmap[] pacmanRight, pacmanDown, pacmanLeft, pacmanUp;
@@ -55,7 +56,7 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     protected static final int GHOST_DAMAGE   = 200;
     protected static final int RESPAWN_X      = 8;
     protected static final int RESPAWN_Y      = 13;
-    protected static final int MAX_LIVES    = 5;
+    protected static final int MAX_LIVES    = 1;
     protected int   lives[]   = { MAX_LIVES };
     protected Paint textPaint = new Paint();
     private final short[][] originalLevel =
@@ -67,31 +68,42 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     final Handler handler = new Handler();
     List<Integer> freeDirs = new ArrayList<>(4);
 
-
-
     public DrawingView(Context context) {
         this(context, null);
     }
 
-
     public DrawingView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
+
+        if (gameSession == null) {
+            Log.d("DrawingView", "Inicializando GameSession desde constructor con AttributeSet");
+            gameSession = new GameSession("clasico", 1);
+        }
     }
 
-
     public DrawingView(Context context,
-                       AttributeSet attrs,
-                       int defStyleAttr) {
+                    AttributeSet attrs,
+                    int defStyleAttr) {
         this(context, attrs, defStyleAttr, 0);
+
+        if (gameSession == null) {
+            Log.d("DrawingView", "Inicializando GameSession desde constructor con defStyleAttr");
+            gameSession = new GameSession("clasico", 1);
+        }
     }
 
-
     public DrawingView(Context context,
-                       AttributeSet attrs,
-                       int defStyleAttr,
-                       int defStyleRes) {
+                    AttributeSet attrs,
+                    int defStyleAttr,
+                    int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context);
+
+        if (gameSession == null) {
+            Log.d("DrawingView", "Inicializando GameSession desde constructor final");
+            gameSession = new GameSession("clasico", 1);
+        }
+        Log.d("DrawingView", "GameSession inicializada: " + (gameSession != null ? "SÍ" : "NO"));
     }
 
 
@@ -164,6 +176,10 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
 
                 //Update current and high scores
                 updateScores(canvas);
+                
+                // Actualizar GameSession periódicamente cada cierto número de frames
+                updateGameSession();
+                
                 holder.unlockCanvasAndPost(canvas);
             }
         }
@@ -260,7 +276,11 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
             if ((ch & 16) != 0) {
                 leveldata1[y / blockSize][x / blockSize] = (short) (ch ^ 16);
                 currentScore += 10;
-                if (--pelletsLeft == 0) resetPellets();
+                if (--pelletsLeft == 0) {
+                    // Nivel completado - llamar al método levelCompleted en lugar de resetPellets
+                    levelCompleted();
+                    return;
+                }
             }
 
             // *buffer* de dirección
@@ -325,20 +345,17 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
 
     private void checkCollisionSingle() {
         if (intersects(xPosPacman, yPosPacman, xPosGhost, yPosGhost)) {
-
+            Log.d("DrawingView", "Colisión detectada! Vidas restantes: " + lives[0]);
 
             currentScore = Math.max(0, currentScore - GHOST_DAMAGE);
 
-
-            // paint.setAlpha(120);
-            // drawSinglePacman(...)
-
             if (--lives[0] == 0) {
+                Log.d("DrawingView", "Se acabaron las vidas, llamando gameOver()");
                 gameOver();
                 return;
             }
 
-
+            // Respawn del jugador
             xPosPacman = RESPAWN_X * blockSize;
             yPosPacman = RESPAWN_Y * blockSize;
             direction      = 4;
@@ -348,11 +365,48 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     }
 
     protected void gameOver() {
+        Log.d("DrawingView", "gameOver() llamado - currentScore: " + currentScore + ", lives: " + lives[0]);
+        
+        // Verificar si gameSession existe, si no, crear una nueva
+        if (gameSession == null) {
+            Log.w("DrawingView", "gameSession era null, creando nueva instancia para guardar datos");
+            gameSession = new GameSession("clasico", 1);
+            // Agregar la puntuación del jugador principal
+            gameSession.updateMainPlayerScore(currentScore, lives[0]);
+        }
+        
+        if (gameSession != null) {
+            Log.d("DrawingView", "Actualizando puntuación antes de terminar partida");
+            gameSession.updateMainPlayerScore(currentScore, lives[0]);
+            gameSession.endGame(false); // false porque se acabaron las vidas
+        } else {
+            Log.e("DrawingView", "Error: No se pudo crear gameSession");
+        }
+        
         /* muestra Toast en el hilo de UI y vuelve a MainActivity */
         post(() -> {
             Context ctx = getContext();
             Toast.makeText(ctx,
                     "Game Over. Puntuación obtenida: " + currentScore,
+                    Toast.LENGTH_LONG).show();
+    
+            if (ctx instanceof Activity) ((Activity) ctx).finish();
+            ctx.startActivity(new Intent(ctx, MainActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                            | Intent.FLAG_ACTIVITY_NEW_TASK));
+        });
+    }
+
+    protected void levelCompleted() {
+        if (gameSession != null) {
+            gameSession.updateMainPlayerScore(currentScore, lives[0]);
+            gameSession.endGame(true); // true porque se completó el nivel
+        }
+        
+        post(() -> {
+            Context ctx = getContext();
+            Toast.makeText(ctx,
+                    "¡Nivel completado! Puntuación: " + currentScore,
                     Toast.LENGTH_LONG).show();
 
             if (ctx instanceof Activity) ((Activity) ctx).finish();
@@ -362,7 +416,12 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
         });
     }
 
-
+    // Actualizar puntuación periódicamente
+    protected void updateGameSession() {
+        if (gameSession != null) {
+            gameSession.updateMainPlayerScore(currentScore, lives[0]);
+        }
+    }
 
     private void drawArrowIndicators(Canvas canvas) {
         switch(nextDirection) {
