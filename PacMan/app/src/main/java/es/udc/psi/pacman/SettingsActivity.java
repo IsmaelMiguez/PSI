@@ -26,7 +26,15 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import es.udc.psi.pacman.data.FirestoreManager;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -286,12 +294,12 @@ public class SettingsActivity extends AppCompatActivity {
         // Si es un usuario por email, solicitar reautenticación
         if (!user.isAnonymous()) {
             builder.setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
-                showReauthenticateDialog();
+                showGameDataDeletionDialog();
             });
         } else {
-            // Para usuarios invitados, eliminar directamente
+            // Para usuarios invitados, preguntar sobre datos de juego directamente
             builder.setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
-                deleteAccount();
+                showGameDataDeletionDialog();
             });
         }
         
@@ -301,38 +309,86 @@ public class SettingsActivity extends AppCompatActivity {
         
         builder.show();
     }
-    
-    private void showReauthenticateDialog() {
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user == null || user.getEmail() == null) return;
-        
+
+    private void showGameDataDeletionDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getString(R.string.reauth_required));
+        builder.setTitle("Eliminar datos de juego");
+        builder.setMessage("¿Deseas eliminar también todas tus partidas y tu posición en los rankings?\n\nEsta acción no se puede deshacer.");
         
-        // Configurar un campo para la contraseña
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        input.setHint(getString(R.string.password));
-        
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 20, 50, 20);
-        layout.addView(input);
-        
-        builder.setView(layout);
-        
-        builder.setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
-            String password = input.getText().toString().trim();
-            if (!password.isEmpty()) {
-                reauthenticateUser(user.getEmail(), password);
+        builder.setPositiveButton("Sí, eliminar todo", (dialog, which) -> {
+            // Eliminar cuenta con todos los datos de juego
+            if (mAuth.getCurrentUser() != null && !mAuth.getCurrentUser().isAnonymous()) {
+                showReauthenticateDialog(true); // true = eliminar datos de juego
+            } else {
+                deleteAccountWithGameData(true);
             }
         });
         
-        builder.setNegativeButton(getString(R.string.cancel), (dialog, which) -> {
+        builder.setNegativeButton("No, solo la cuenta", (dialog, which) -> {
+            // Eliminar solo la cuenta, mantener datos de juego
+            if (mAuth.getCurrentUser() != null && !mAuth.getCurrentUser().isAnonymous()) {
+                showReauthenticateDialog(false); // false = no eliminar datos de juego
+            } else {
+                deleteAccountWithGameData(false);
+            }
+        });
+        
+        builder.setNeutralButton("Cancelar", (dialog, which) -> {
             dialog.cancel();
         });
         
         builder.show();
+    }
+    
+    private void showReauthenticateDialog(boolean deleteGameData) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null || user.isAnonymous()) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.reauthenticate));
+        builder.setMessage(getString(R.string.enter_password_to_delete));
+
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        input.setHint(getString(R.string.password));
+        builder.setView(input);
+
+        builder.setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
+            String password = input.getText().toString().trim();
+            if (!password.isEmpty()) {
+                reauthenticateAndDelete(password, deleteGameData);
+            } else {
+                Toast.makeText(this, getString(R.string.password_required), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton(getString(R.string.cancel), (dialog, which) -> {
+            dialog.cancel();
+        });
+
+        builder.show();
+    }
+
+    private void reauthenticateAndDelete(String password, boolean deleteGameData) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+
+        progressBar.setVisibility(View.VISIBLE);
+
+        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), password);
+        user.reauthenticate(credential)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "User re-authenticated successfully");
+                        deleteAccountWithGameData(deleteGameData);
+                    } else {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(SettingsActivity.this,
+                                getString(R.string.reauthentication_failed) + ": " +
+                                        task.getException().getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
     }
     
     private void reauthenticateUser(String email, String password) {
@@ -361,40 +417,166 @@ public class SettingsActivity extends AppCompatActivity {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) return;
         
+        String userId = user.getUid(); // Guardar el ID antes de eliminar
         progressBar.setVisibility(View.VISIBLE);
         
-        // Eliminar primero la cuenta de autenticación
-        user.delete()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        // Eliminar los datos de Firestore después de eliminar la autenticación
-                        // (Esto puede fallar si las reglas no lo permiten, pero el usuario ya estará eliminado)
-                        try {
-                            db.collection("users").document(user.getUid())
-                                    .delete()
-                                    .addOnSuccessListener(aVoid -> {
-                                        Log.d(TAG, "User data deleted from Firestore");
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        // Esto podría fallar, pero no bloqueamos el proceso
-                                        Log.w(TAG, "Error deleting user data", e);
-                                    });
-                        } catch (Exception e) {
-                            Log.w(TAG, "Error trying to delete user data", e);
-                        }
+        // Eliminar datos de usuario de la colección correcta (users, no jugadores)
+        db.collection("users").document(userId)
+                .delete()
+                .addOnCompleteListener(userDataTask -> {
+                    // DESPUÉS eliminar la cuenta de Authentication
+                    user.delete()
+                            .addOnCompleteListener(authTask -> {
+                                progressBar.setVisibility(View.GONE);
+                                
+                                if (authTask.isSuccessful()) {
+                                    Toast.makeText(SettingsActivity.this,
+                                            getString(R.string.account_deleted),
+                                            Toast.LENGTH_SHORT).show();
+                                    startLoginActivity();
+                                } else {
+                                    Toast.makeText(SettingsActivity.this,
+                                            getString(R.string.error_delete_account) + ": " +
+                                                    authTask.getException().getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                });
+    }
 
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(SettingsActivity.this,
-                                getString(R.string.account_deleted),
-                                Toast.LENGTH_SHORT).show();
-                        startLoginActivity();
+    private void deleteAccountWithGameData(boolean deleteGameData) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+        
+        progressBar.setVisibility(View.VISIBLE);
+        
+        if (deleteGameData) {
+            // Eliminar datos de juego primero
+            eliminarDatosDeJuegoCompletamente(user.getUid());
+        } else {
+            // Solo eliminar datos básicos
+            proceedWithAccountDeletion(user);
+        }
+    }
+
+    private void eliminarDatosDeJuegoCompletamente(String userId) {
+        // Usar operaciones separadas en lugar de batch para evitar problemas de permisos
+        FirestoreManager firestoreManager = new FirestoreManager();
+        
+        // Paso 1: Eliminar puntuaciones
+        db.collection("puntuaciones")
+                .whereEqualTo("idJugador", userId)
+                .get()
+                .addOnCompleteListener(puntuacionesTask -> {
+                    if (puntuacionesTask.isSuccessful()) {
+                        Log.d(TAG, "Encontradas " + puntuacionesTask.getResult().size() + " puntuaciones");
+                        
+                        // Eliminar puntuaciones una por una
+                        eliminarPuntuacionesIndividualmente(puntuacionesTask.getResult().getDocuments(), userId);
                     } else {
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(SettingsActivity.this,
-                                getString(R.string.error_delete_account) + ": " +
-                                        task.getException().getMessage(),
-                                Toast.LENGTH_SHORT).show();
+                        Log.w(TAG, "Error obteniendo puntuaciones", puntuacionesTask.getException());
+                        proceedWithAccountDeletion(mAuth.getCurrentUser());
                     }
+                });
+    }
+
+    private void eliminarPuntuacionesIndividualmente(List<DocumentSnapshot> puntuaciones, String userId) {
+        AtomicInteger pendingDeletions = new AtomicInteger(puntuaciones.size());
+        Set<String> partidasClasicas = new HashSet<>();
+        
+        if (puntuaciones.isEmpty()) {
+            eliminarPartidasClasicas(partidasClasicas, userId);
+            return;
+        }
+        
+        for (DocumentSnapshot puntuacion : puntuaciones) {
+            // Recoger partidas clásicas
+            String modoJuego = puntuacion.getString("modoJuego");
+            String idPartida = puntuacion.getString("idPartida");
+            if ("clasico".equals(modoJuego) && idPartida != null) {
+                partidasClasicas.add(idPartida);
+            }
+            
+            // Eliminar puntuación
+            puntuacion.getReference().delete()
+                    .addOnCompleteListener(deleteTask -> {
+                        if (deleteTask.isSuccessful()) {
+                            Log.d(TAG, "Puntuación eliminada: " + puntuacion.getId());
+                        } else {
+                            Log.w(TAG, "Error eliminando puntuación: " + puntuacion.getId());
+                        }
+                        
+                        if (pendingDeletions.decrementAndGet() == 0) {
+                            // Todas las puntuaciones procesadas, ahora eliminar partidas
+                            eliminarPartidasClasicas(partidasClasicas, userId);
+                        }
+                    });
+        }
+    }
+
+    private void eliminarPartidasClasicas(Set<String> partidasClasicas, String userId) {
+        AtomicInteger pendingDeletions = new AtomicInteger(partidasClasicas.size());
+        
+        Log.d(TAG, "Eliminando " + partidasClasicas.size() + " partidas clásicas");
+        
+        if (partidasClasicas.isEmpty()) {
+            proceedWithAccountDeletion(mAuth.getCurrentUser());
+            return;
+        }
+        
+        for (String partidaId : partidasClasicas) {
+            db.collection("partidas").document(partidaId)
+                    .delete()
+                    .addOnCompleteListener(deleteTask -> {
+                        if (deleteTask.isSuccessful()) {
+                            Log.d(TAG, "Partida eliminada: " + partidaId);
+                        } else {
+                            Log.w(TAG, "Error eliminando partida: " + partidaId);
+                        }
+                        
+                        if (pendingDeletions.decrementAndGet() == 0) {
+                            // Todas las partidas procesadas, proceder con eliminación de cuenta
+                            proceedWithAccountDeletion(mAuth.getCurrentUser());
+                        }
+                    });
+        }
+    }
+
+    private void proceedWithAccountDeletion(FirebaseUser user) {
+        if (user == null) {
+            progressBar.setVisibility(View.GONE);
+            return;
+        }
+        
+        String userId = user.getUid();
+        
+        // Eliminar datos básicos de usuario
+        db.collection("users").document(userId)
+                .delete()
+                .addOnCompleteListener(userDataTask -> {
+                    if (userDataTask.isSuccessful()) {
+                        Log.d(TAG, "User data deleted from users collection");
+                    } else {
+                        Log.w(TAG, "Error deleting user data from users collection", userDataTask.getException());
+                    }
+                    
+                    // Eliminar cuenta de Authentication
+                    user.delete()
+                            .addOnCompleteListener(authTask -> {
+                                progressBar.setVisibility(View.GONE);
+                                
+                                if (authTask.isSuccessful()) {
+                                    Toast.makeText(SettingsActivity.this,
+                                            getString(R.string.account_deleted),
+                                            Toast.LENGTH_SHORT).show();
+                                    startLoginActivity();
+                                } else {
+                                    Toast.makeText(SettingsActivity.this,
+                                            getString(R.string.error_delete_account) + ": " +
+                                                    authTask.getException().getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
                 });
     }
     

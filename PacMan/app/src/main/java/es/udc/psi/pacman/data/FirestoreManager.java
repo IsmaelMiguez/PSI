@@ -1,5 +1,7 @@
 package es.udc.psi.pacman.data;
 
+import android.util.Log;
+
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.CollectionReference;
@@ -10,7 +12,9 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import es.udc.psi.pacman.data.models.Jugador;
 import es.udc.psi.pacman.data.models.Partida;
@@ -102,6 +106,51 @@ public class FirestoreManager {
         }
         
         return batch.commit();
+    }
+
+    // Método para eliminar todos los datos de un usuario
+    public Task<Void> eliminarTodosDatosUsuario(String idJugador) {
+        return db.collection(COLECCION_PUNTUACIONES)
+                .whereEqualTo("idJugador", idJugador)
+                .get()
+                .continueWithTask(task -> {
+                    if (task.isSuccessful()) {
+                        WriteBatch batch = db.batch();
+                        Set<String> partidasClasicasAEliminar = new HashSet<>();
+                        
+                        Log.d("FirestoreManager", "Encontradas " + task.getResult().size() + " puntuaciones para eliminar");
+                        
+                        // 1. Eliminar todas las puntuaciones del usuario y recopilar partidas clásicas
+                        for (DocumentSnapshot puntuacionDoc : task.getResult().getDocuments()) {
+                            Log.d("FirestoreManager", "Eliminando puntuación: " + puntuacionDoc.getId());
+                            batch.delete(puntuacionDoc.getReference());
+                            
+                            // Si es una partida clásica, agregar a la lista para eliminar
+                            String modoJuego = puntuacionDoc.getString("modoJuego");
+                            String idPartida = puntuacionDoc.getString("idPartida");
+                            if ("clasico".equals(modoJuego) && idPartida != null) {
+                                partidasClasicasAEliminar.add(idPartida);
+                                Log.d("FirestoreManager", "Partida clásica marcada para eliminar: " + idPartida);
+                            }
+                        }
+                        
+                        // 2. Eliminar las partidas clásicas directamente (ya tenemos los IDs)
+                        for (String idPartida : partidasClasicasAEliminar) {
+                            DocumentReference partidaRef = db.collection(COLECCION_PARTIDAS).document(idPartida);
+                            batch.delete(partidaRef);
+                            Log.d("FirestoreManager", "Eliminando partida clásica: " + idPartida);
+                        }
+                        
+                        Log.d("FirestoreManager", "Batch preparado: " + 
+                                task.getResult().size() + " puntuaciones + " + 
+                                partidasClasicasAEliminar.size() + " partidas clásicas");
+                        
+                        return batch.commit();
+                    } else {
+                        Log.e("FirestoreManager", "Error al obtener puntuaciones: " + task.getException().getMessage());
+                        return Tasks.forException(task.getException());
+                    }
+                });
     }
 
     // RANKINGS

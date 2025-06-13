@@ -82,6 +82,16 @@
     <string name="difficulty_hard">Difícil</string>
     <string name="settings_saved">Configuración guardada</string>
 
+    <!-- Account deletion -->
+    <string name="delete_game_data_title">Eliminar datos de juego</string>
+    <string name="delete_game_data_message">¿Deseas eliminar también todas tus partidas y tu posición en los rankings?\n\nEsta acción no se puede deshacer.</string>
+    <string name="yes_delete_all">Sí, eliminar todo</string>
+    <string name="no_only_account">No, solo la cuenta</string>
+    <string name="reauthenticate">Reautenticación requerida</string>
+    <string name="enter_password_to_delete">Por favor, ingresa tu contraseña para confirmar la eliminación de la cuenta</string>
+    <string name="password_required">La contraseña es requerida</string>
+    <string name="reauthentication_failed">Error de reautenticación</string>
+
     <!-- Help Activity -->
     <string name="help_section">Ayuda</string>
     <string name="help_controls_title">Controles:</string>
