@@ -101,4 +101,8 @@
     <string name="help_enemies_title">Enemigos:</string>
     <string name="help_enemies_description">Cada fantasma tiene un comportamiento diferente. Blinky (rojo) te persigue directamente, Pinky (rosa) intenta emboscarte, Inky (azul) es impredecible, y Clyde (naranja) deambula por su cuenta.</string>
     <string name="help_control_switch">Usar controles con botones</string>
+
+    <string name="controls_centralized_message">Los controles se pueden cambiar desde Configuración</string>
+    <string name="swipe_controls">Controles por Gestos</string>
+    <string name="button_controls">Controles por Botones</string>
 </resources>
