@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -33,6 +34,7 @@ public class RankingActivity extends AppCompatActivity {
     private TabLayout tabLayout;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
+    private TextView tvSortIndicator;
     
     private FirestoreManager firestoreManager;
     private RankingAdapter adapter;
@@ -77,18 +79,23 @@ public class RankingActivity extends AppCompatActivity {
         tabLayout = findViewById(R.id.tabLayout);
         recyclerView = findViewById(R.id.recyclerView);
         progressBar = findViewById(R.id.progressBar);
+        tvSortIndicator = findViewById(R.id.tvSortIndicator);
         
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
     
     private void setupTabs() {
-        tabLayout.addTab(tabLayout.newTab().setText("Clásico"));
-        tabLayout.addTab(tabLayout.newTab().setText("Cooperativo"));
+        TabLayout.Tab clasicoTab = tabLayout.newTab().setText("🎮 Clásico");
+        TabLayout.Tab cooperativoTab = tabLayout.newTab().setText("👥 Cooperativo");
+
+        tabLayout.addTab(clasicoTab);
+        tabLayout.addTab(cooperativoTab);
         
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 loadRanking(tab.getPosition(), 0); // Por puntuación por defecto
+                updateSortIndicator(0); // NUEVO
             }
             
             @Override
@@ -100,8 +107,25 @@ public class RankingActivity extends AppCompatActivity {
                 int currentSort = adapter != null ? adapter.getCurrentSortType() : 0;
                 int newSort = currentSort == 0 ? 1 : 0; // 0 = puntuación, 1 = tiempo
                 loadRanking(tab.getPosition(), newSort);
+                updateSortIndicator(newSort);
             }
         });
+    }
+
+    private void updateSortIndicator(int sortType) {
+        if (tvSortIndicator == null) return;
+        
+        if (sortType == 0) {
+            // Ordenado por puntuación
+            tvSortIndicator.setText(R.string.ordenado_por_puntuacion);
+            tvSortIndicator.setBackgroundColor(getColor(R.color.sort_indicator_background));
+            tvSortIndicator.setTextColor(getColor(R.color.sort_indicator_text));
+        } else {
+            // Ordenado por tiempo
+            tvSortIndicator.setText(R.string.ordenado_por_tiempo);
+            tvSortIndicator.setBackgroundColor(getColor(R.color.sort_indicator_time_background));
+            tvSortIndicator.setTextColor(getColor(R.color.sort_indicator_time_text));
+        }
     }
 
     private void handleQueryError(Exception e) {
@@ -146,6 +170,8 @@ public class RankingActivity extends AppCompatActivity {
         if (progressBar != null) {
             progressBar.setVisibility(View.VISIBLE);
         }
+
+        updateSortIndicator(sortType);
         
         Task<QuerySnapshot> query = getQueryForModeAndSort(gameMode, sortType);
         
@@ -203,6 +229,9 @@ public class RankingActivity extends AppCompatActivity {
             
             // Scroll automático al usuario actual
             scrollToCurrentUser(puntuaciones);
+
+            // Asegurar que el indicador se actualice al finalizar la carga
+            updateSortIndicator(sortType);
             
         }).addOnFailureListener(e -> {
             Log.e(TAG, "Error al cargar ranking", e);
@@ -226,6 +255,8 @@ public class RankingActivity extends AppCompatActivity {
         // Consulta simplificada sin ordenación compleja
         Task<QuerySnapshot> fallbackQuery;
         String modoJuego = gameMode == 0 ? "clasico" : "cooperativo";
+
+        updateSortIndicator(sortType);
         
         Log.d(TAG, "Usando fallback para modo=" + modoJuego + ", sortType=" + sortType);
         
@@ -304,6 +335,9 @@ public class RankingActivity extends AppCompatActivity {
             
             // Mostrar mensaje informativo
             Toast.makeText(this, "Cargado con ordenación alternativa", Toast.LENGTH_SHORT).show();
+
+            // Confirmar indicador al finalizar fallback
+            updateSortIndicator(sortType);
             
         }).addOnFailureListener(e -> {
             Log.e(TAG, "Error en consulta fallback", e);

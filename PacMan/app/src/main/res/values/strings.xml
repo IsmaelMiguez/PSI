@@ -8,6 +8,9 @@
 
     <string name="howToPlayLabel">HOW TO PLAY</string>
 
+    <string name="ordenado_por_puntuacion">📊 Ordenado por Puntuación</string>
+    <string name="ordenado_por_tiempo">⏱️ Ordenado por Tiempo</string>
+
 
     <string name="controlsLabel">CONTROLS</string>
     <string name="controls">Up: Swipe Up\nDown: Swipe Down\nLeft: Swipe Left\nRight: Swipe Right\n
