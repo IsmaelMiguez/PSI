@@ -15,6 +15,7 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -36,6 +37,7 @@ public class RankingActivity extends AppCompatActivity {
     private FirestoreManager firestoreManager;
     private RankingAdapter adapter;
     private String currentUserId;
+    private FirebaseFirestore db; // Agregar esta línea
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +48,7 @@ public class RankingActivity extends AppCompatActivity {
         setupTabs();
         
         firestoreManager = new FirestoreManager();
+        db = FirebaseFirestore.getInstance(); // Inicializar aquí
         
         // Obtener ID del usuario actual
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -76,8 +79,6 @@ public class RankingActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new RankingAdapter(currentUserId);
-        recyclerView.setAdapter(adapter);
     }
     
     private void setupTabs() {
@@ -96,7 +97,7 @@ public class RankingActivity extends AppCompatActivity {
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
                 // Alternar entre puntuación y tiempo
-                int currentSort = adapter.getCurrentSortType();
+                int currentSort = adapter != null ? adapter.getCurrentSortType() : 0;
                 int newSort = currentSort == 0 ? 1 : 0; // 0 = puntuación, 1 = tiempo
                 loadRanking(tab.getPosition(), newSort);
             }
@@ -106,8 +107,8 @@ public class RankingActivity extends AppCompatActivity {
     private void handleQueryError(Exception e) {
         if (e.getMessage() != null) {
             if (e.getMessage().contains("requires an index")) {
-                Toast.makeText(this, "Los índices aún se están construyendo. Intenta en unos minutos.", Toast.LENGTH_LONG).show();
-                Log.w(TAG, "Índices aún no están listos");
+                Toast.makeText(this, "Ordenación por tiempo no disponible. Mostrando por puntuación.", Toast.LENGTH_LONG).show();
+                Log.w(TAG, "Índices aún no están listos, usando fallback");
             } else if (e.getMessage().contains("PERMISSION_DENIED")) {
                 Toast.makeText(this, "No tienes permisos para acceder a los datos", Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Error de permisos");
@@ -140,7 +141,7 @@ public class RankingActivity extends AppCompatActivity {
                 return firestoreManager.obtenerRankingClasicoPorPuntuacion(100);
         }
     }
-    
+
     private void loadRanking(int gameMode, int sortType) {
         if (progressBar != null) {
             progressBar.setVisibility(View.VISIBLE);
@@ -154,7 +155,28 @@ public class RankingActivity extends AppCompatActivity {
                 Puntuacion puntuacion = document.toObject(Puntuacion.class);
                 puntuacion.setId(document.getId());
                 puntuaciones.add(puntuacion);
+                
+                // Agregar log para debug
+                Log.d(TAG, "Puntuación cargada: " + puntuacion.getNombreJugador() + 
+                        ", puntos=" + puntuacion.getPuntos() + 
+                        ", completada=" + puntuacion.isPartidaCompletada() +
+                        ", modo=" + puntuacion.getModoJuego());
             }
+            
+            // Si estamos ordenando por tiempo, ordenar manualmente en el cliente
+            if (sortType == 1) {
+                puntuaciones.sort((p1, p2) -> {
+                    // Primero por duración (ascendente)
+                    int compareTime = Integer.compare(p1.getDuracionPartida(), p2.getDuracionPartida());
+                    if (compareTime != 0) {
+                        return compareTime;
+                    }
+                    // Si tienen el mismo tiempo, por puntuación (descendente)
+                    return Integer.compare(p2.getPuntos(), p1.getPuntos());
+                });
+            }
+            
+            Log.d(TAG, "Cargadas " + puntuaciones.size() + " puntuaciones únicas (modo=" + gameMode + ", sort=" + sortType + ")");
             
             if (adapter == null) {
                 adapter = new RankingAdapter(currentUserId);
@@ -163,16 +185,112 @@ public class RankingActivity extends AppCompatActivity {
                 adapter.setOnUserPositionFoundListener(new RankingAdapter.OnUserPositionFoundListener() {
                     @Override
                     public void onUserPositionFound(int position) {
-                        // Hacer scroll hasta la posición del usuario con un pequeño delay
-                        recyclerView.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                scrollToUserPosition(position);
-                            }
-                        }, 100); // Delay de 100ms para asegurar que el layout esté completo
+                        if (recyclerView != null && position >= 0) {
+                            recyclerView.smoothScrollToPosition(position);
+                        }
                     }
                 });
                 
+                recyclerView.setAdapter(adapter);
+            }
+            
+            // Como ahora cada usuario tiene solo una puntuación por modo, no necesitamos filtrar
+            adapter.updateData(puntuaciones, sortType);
+            
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
+            
+            // Scroll automático al usuario actual
+            scrollToCurrentUser(puntuaciones);
+            
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "Error al cargar ranking", e);
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
+            
+            // Manejo específico para errores de índices
+            if (e.getMessage() != null && e.getMessage().contains("requires an index")) {
+                Log.w(TAG, "Índice requerido no disponible, intentando consulta alternativa");
+                
+                // Intentar una consulta más simple como fallback
+                loadRankingFallback(gameMode, sortType);
+            } else {
+                handleQueryError(e);
+            }
+        });
+    }
+
+    private void loadRankingFallback(int gameMode, int sortType) {
+        // Consulta simplificada sin ordenación compleja
+        Task<QuerySnapshot> fallbackQuery;
+        String modoJuego = gameMode == 0 ? "clasico" : "cooperativo";
+        
+        Log.d(TAG, "Usando fallback para modo=" + modoJuego + ", sortType=" + sortType);
+        
+        if (sortType == 1) {
+            // Para ordenación por tiempo, traer TODAS las partidas (no solo completadas)
+            fallbackQuery = db.collection("puntuaciones")
+                    .whereEqualTo("modoJuego", modoJuego)
+                    .get();
+        } else {
+            // Para puntuación, usar la consulta original que funciona
+            fallbackQuery = getQueryForModeAndSort(gameMode, 0); // Siempre por puntuación
+        }
+        
+        fallbackQuery.addOnSuccessListener(queryDocumentSnapshots -> {
+            List<Puntuacion> puntuaciones = new ArrayList<>();
+            for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                Puntuacion puntuacion = document.toObject(Puntuacion.class);
+                puntuacion.setId(document.getId());
+                puntuaciones.add(puntuacion);
+                
+                // Log para debug
+                Log.d(TAG, "Fallback - Puntuación cargada: " + puntuacion.getNombreJugador() + 
+                        ", puntos=" + puntuacion.getPuntos() + 
+                        ", completada=" + puntuacion.isPartidaCompletada() +
+                        ", tiempo=" + puntuacion.getDuracionPartida());
+            }
+            
+            // Ordenar manualmente en el cliente
+            if (sortType == 1) {
+                // Ordenar por tiempo, pero priorizar partidas completadas
+                puntuaciones.sort((p1, p2) -> {
+                    // Primero, partidas completadas van antes que incompletas
+                    if (p1.isPartidaCompletada() && !p2.isPartidaCompletada()) {
+                        return -1;
+                    } else if (!p1.isPartidaCompletada() && p2.isPartidaCompletada()) {
+                        return 1;
+                    }
+                    
+                    // Si ambas tienen el mismo estado de completado, ordenar por tiempo
+                    int compareTime = Integer.compare(p1.getDuracionPartida(), p2.getDuracionPartida());
+                    if (compareTime != 0) {
+                        return compareTime;
+                    }
+                    // Si tienen el mismo tiempo, por puntuación
+                    return Integer.compare(p2.getPuntos(), p1.getPuntos());
+                });
+            } else {
+                puntuaciones.sort((p1, p2) -> {
+                    int compareScore = Integer.compare(p2.getPuntos(), p1.getPuntos());
+                    if (compareScore != 0) {
+                        return compareScore;
+                    }
+                    return Integer.compare(p1.getDuracionPartida(), p2.getDuracionPartida());
+                });
+            }
+            
+            Log.d(TAG, "Fallback: Cargadas " + puntuaciones.size() + " puntuaciones (después de ordenar)");
+            
+            if (adapter == null) {
+                adapter = new RankingAdapter(currentUserId);
+                adapter.setOnUserPositionFoundListener(position -> {
+                    if (recyclerView != null && position >= 0) {
+                        recyclerView.smoothScrollToPosition(position);
+                    }
+                });
                 recyclerView.setAdapter(adapter);
             }
             
@@ -182,123 +300,18 @@ public class RankingActivity extends AppCompatActivity {
                 progressBar.setVisibility(View.GONE);
             }
             
-            // Buscar y hacer scroll a la posición del usuario después de un breve delay
-            recyclerView.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    scrollToUserIfFound();
-                }
-            }, 200);
+            scrollToCurrentUser(puntuaciones);
+            
+            // Mostrar mensaje informativo
+            Toast.makeText(this, "Cargado con ordenación alternativa", Toast.LENGTH_SHORT).show();
             
         }).addOnFailureListener(e -> {
-            Log.e(TAG, "Error al cargar ranking", e);
+            Log.e(TAG, "Error en consulta fallback", e);
+            handleQueryError(e);
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
-            Toast.makeText(this, "Error al cargar el ranking: " + e.getMessage(), 
-                    Toast.LENGTH_SHORT).show();
         });
-    }
-    
-    private void handleRankingResponse(QuerySnapshot querySnapshot, int sortType) {
-        progressBar.setVisibility(View.GONE);
-        
-        if (querySnapshot != null) {
-            Log.d(TAG, "Procesando " + querySnapshot.size() + " documentos");
-            
-            List<Puntuacion> todasLasPuntuaciones = new ArrayList<>();
-            for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                Puntuacion puntuacion = doc.toObject(Puntuacion.class);
-                if (puntuacion != null) {
-                    puntuacion.setId(doc.getId());
-                    todasLasPuntuaciones.add(puntuacion);
-                    Log.d(TAG, "Puntuación: " + puntuacion.getNombreJugador() + 
-                            " - " + puntuacion.getPuntos() + " pts - " + 
-                            puntuacion.getDuracionPartida() + "s");
-                }
-            }
-            
-            // Filtrar para mantener solo la mejor puntuación por usuario
-            List<Puntuacion> mejoresPuntuaciones = filtrarMejoresPorUsuario(todasLasPuntuaciones, sortType);
-            
-            if (mejoresPuntuaciones.isEmpty()) {
-                Toast.makeText(this, "No hay datos para mostrar", Toast.LENGTH_SHORT).show();
-                Log.w(TAG, "No se encontraron puntuaciones");
-            } else {
-                adapter.updateData(mejoresPuntuaciones, sortType);
-                scrollToCurrentUser(mejoresPuntuaciones);
-                Log.d(TAG, "Ranking actualizado correctamente con " + mejoresPuntuaciones.size() + " entradas únicas");
-            }
-        } else {
-            Toast.makeText(this, "Error cargando ranking", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "QuerySnapshot es null");
-        }
-    }
-    
-    private List<Puntuacion> filtrarMejoresPorUsuario(List<Puntuacion> puntuaciones, int sortType) {
-        Map<String, Puntuacion> mejoresPorUsuario = new HashMap<>();
-        
-        for (Puntuacion puntuacion : puntuaciones) {
-            String userId = puntuacion.getIdJugador();
-            
-            if (!mejoresPorUsuario.containsKey(userId)) {
-                mejoresPorUsuario.put(userId, puntuacion);
-            } else {
-                Puntuacion actual = mejoresPorUsuario.get(userId);
-                
-                // Comparar según el tipo de ordenamiento
-                boolean esMejor = false;
-                if (sortType == 0) { // Por puntuación
-                    esMejor = puntuacion.getPuntos() > actual.getPuntos() ||
-                             (puntuacion.getPuntos() == actual.getPuntos() && 
-                              puntuacion.getDuracionPartida() < actual.getDuracionPartida());
-                } else { // Por tiempo (solo partidas completadas)
-                    if (puntuacion.isPartidaCompletada() && actual.isPartidaCompletada()) {
-                        esMejor = puntuacion.getDuracionPartida() < actual.getDuracionPartida() ||
-                                 (puntuacion.getDuracionPartida() == actual.getDuracionPartida() && 
-                                  puntuacion.getPuntos() > actual.getPuntos());
-                    } else if (puntuacion.isPartidaCompletada() && !actual.isPartidaCompletada()) {
-                        esMejor = true;
-                    }
-                }
-                
-                if (esMejor) {
-                    mejoresPorUsuario.put(userId, puntuacion);
-                }
-            }
-        }
-        
-        List<Puntuacion> resultado = new ArrayList<>(mejoresPorUsuario.values());
-        
-        // Ordenar el resultado final
-        if (sortType == 0) { // Por puntuación
-            resultado.sort((p1, p2) -> {
-                int puntosComparison = Integer.compare(p2.getPuntos(), p1.getPuntos());
-                if (puntosComparison == 0) {
-                    return Integer.compare(p1.getDuracionPartida(), p2.getDuracionPartida());
-                }
-                return puntosComparison;
-            });
-        } else { // Por tiempo
-            resultado.sort((p1, p2) -> {
-                // Solo considerar partidas completadas para ranking por tiempo
-                if (!p1.isPartidaCompletada() && !p2.isPartidaCompletada()) {
-                    return Integer.compare(p2.getPuntos(), p1.getPuntos());
-                } else if (!p1.isPartidaCompletada()) {
-                    return 1;
-                } else if (!p2.isPartidaCompletada()) {
-                    return -1;
-                } else {
-                    int tiempoComparison = Integer.compare(p1.getDuracionPartida(), p2.getDuracionPartida());
-                    if (tiempoComparison == 0) {
-                        return Integer.compare(p2.getPuntos(), p1.getPuntos());
-                    }
-                    return tiempoComparison;
-                }
-            });
-        }
-        
-        return resultado;
     }
 
     private void scrollToUserIfFound() {
@@ -335,15 +348,20 @@ public class RankingActivity extends AppCompatActivity {
             Log.d(TAG, "Haciendo scroll hasta la posición del usuario: " + position);
         }
     }
-    
+
     private void scrollToCurrentUser(List<Puntuacion> puntuaciones) {
-        if (currentUserId == null) return;
+        if (currentUserId == null || puntuaciones.isEmpty()) return;
         
+        // Buscar posición del usuario actual
         for (int i = 0; i < puntuaciones.size(); i++) {
             if (currentUserId.equals(puntuaciones.get(i).getIdJugador())) {
-                // Hacer scroll suave hasta la posición del usuario
-                recyclerView.smoothScrollToPosition(i);
-                Log.d(TAG, "Scroll a posición del usuario: " + i);
+                final int userPosition = i;
+                recyclerView.postDelayed(() -> {
+                    if (recyclerView != null) {
+                        recyclerView.smoothScrollToPosition(userPosition);
+                        Log.d(TAG, "Scroll automático a posición " + userPosition + " del usuario actual");
+                    }
+                }, 300);
                 break;
             }
         }

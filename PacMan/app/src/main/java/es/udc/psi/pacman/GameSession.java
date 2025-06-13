@@ -120,64 +120,39 @@ public class GameSession {
         }
         
         try {
-            // Crear datos de la partida
-            Map<String, Object> partidaData = new HashMap<>();
-            partidaData.put("fechaInicio", new Timestamp(new Date(startTime)));
-            partidaData.put("fechaFin", new Timestamp(new Date(endTime)));
-            partidaData.put("duracionPartida", duration);
-            partidaData.put("modoJuego", modoJuego);
-            partidaData.put("nivel", nivel);
-            partidaData.put("partidaCompletada", completed);
-            partidaData.put("numeroJugadores", playerScores.size());
-            
-            // Crear lista de puntuaciones
-            List<Map<String, Object>> puntuacionesList = new ArrayList<>();
-            
-            for (PlayerScore playerScore : playerScores) {
-                Map<String, Object> puntuacionData = new HashMap<>();
-                puntuacionData.put("idJugador", playerScore.playerId);
-                puntuacionData.put("nombreJugador", playerScore.playerName);
-                puntuacionData.put("puntos", playerScore.score);
-                puntuacionData.put("vidas", playerScore.lives);
-                puntuacionData.put("fechaRegistro", new Timestamp(new Date()));
-                puntuacionData.put("modoJuego", modoJuego);
-                puntuacionData.put("nivel", nivel);
-                puntuacionData.put("duracionPartida", duration);
-                puntuacionData.put("partidaCompletada", completed);
-                
-                puntuacionesList.add(puntuacionData);
-            }
-            
-            // Guardar en Firestore usando FirestoreManager
             FirestoreManager firestoreManager = new FirestoreManager();
             
-            // Primero guardar la partida
+            // Crear y guardar la partida primero
             Partida partida = new Partida(duration, nivel, modoJuego, playerScores.size(), completed);
             firestoreManager.guardarPartida(partida)
                     .addOnSuccessListener(documentReference -> {
                         String partidaId = documentReference.getId();
                         Log.d(TAG, "Partida guardada con ID: " + partidaId);
                         
-                        // Luego guardar las puntuaciones usando el nuevo método
-                        for (Map<String, Object> puntuacionData : puntuacionesList) {
-                            String idJugador = (String) puntuacionData.get("idJugador");
-                            String nombreJugador = (String) puntuacionData.get("nombreJugador");
-                            int puntos = (Integer) puntuacionData.get("puntos");
-                            String modoJuego = (String) puntuacionData.get("modoJuego");
-                            int nivel = (Integer) puntuacionData.get("nivel");
-                            int duracionPartida = (Integer) puntuacionData.get("duracionPartida");
-                            boolean partidaCompletada = (Boolean) puntuacionData.get("partidaCompletada");
+                        // Procesar cada jugador y guardar/actualizar su mejor puntuación
+                        for (PlayerScore playerScore : playerScores) {
+                            Log.d(TAG, "Puntuación actualizada para " + playerScore.playerName + 
+                                    ": " + playerScore.score + " puntos, " + playerScore.lives + " vidas");
                             
-                            Puntuacion puntuacion = new Puntuacion(idJugador, partidaId, puntos, 
-                                    nombreJugador, modoJuego, duracionPartida, nivel, partidaCompletada);
+                            // Crear puntuación para este jugador
+                            Puntuacion puntuacion = new Puntuacion(
+                                    playerScore.playerId,
+                                    partidaId,
+                                    playerScore.score,
+                                    playerScore.playerName,
+                                    modoJuego,
+                                    duration,
+                                    nivel,
+                                    completed
+                            );
                             
-                            // Usar el nuevo método que mantiene solo la mejor puntuación
+                            // Guardar solo si es su mejor puntuación
                             firestoreManager.guardarMejorPuntuacion(puntuacion)
                                     .addOnSuccessListener(aVoid -> {
-                                        Log.d(TAG, "Mejor puntuación guardada para " + nombreJugador);
+                                        Log.d(TAG, "Mejor puntuación procesada para " + playerScore.playerName);
                                     })
                                     .addOnFailureListener(e -> {
-                                        Log.e(TAG, "Error guardando mejor puntuación", e);
+                                        Log.e(TAG, "Error procesando mejor puntuación para " + playerScore.playerName, e);
                                     });
                         }
                     })

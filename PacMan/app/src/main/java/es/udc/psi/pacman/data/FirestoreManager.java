@@ -8,6 +8,7 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
@@ -30,6 +31,18 @@ public class FirestoreManager {
 
     public FirestoreManager() {
         db = FirebaseFirestore.getInstance();
+        
+        // Habilitar persistencia offline para mejor rendimiento
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(true)
+                .build();
+        
+        try {
+            db.setFirestoreSettings(settings);
+        } catch (IllegalStateException e) {
+            // Los settings ya fueron configurados, esto es normal
+            Log.d("FirestoreManager", "Settings de Firestore ya configurados");
+        }
     }
 
     // MÉTODOS PARA JUGADORES
@@ -59,15 +72,22 @@ public class FirestoreManager {
                         
                         if (result.isEmpty()) {
                             // No hay puntuaciones anteriores, guardar directamente
+                            Log.d("FirestoreManager", "Primera puntuación para " + nuevaPuntuacion.getNombreJugador() + 
+                                    " en modo " + nuevaPuntuacion.getModoJuego());
                             return db.collection(COLECCION_PUNTUACIONES)
                                     .add(nuevaPuntuacion.toMap())
                                     .continueWith(addTask -> null);
                         } else {
                             // Existe una puntuación anterior, comparar
-                            Puntuacion mejorAnterior = result.getDocuments().get(0).toObject(Puntuacion.class);
+                            DocumentSnapshot mejorAnteriorDoc = result.getDocuments().get(0);
+                            Puntuacion mejorAnterior = mejorAnteriorDoc.toObject(Puntuacion.class);
                             
-                            if (nuevaPuntuacion.getPuntos() > mejorAnterior.getPuntos()) {
+                            Log.d("FirestoreManager", "Comparando puntuaciones para " + nuevaPuntuacion.getNombreJugador() + 
+                                    ": nueva=" + nuevaPuntuacion.getPuntos() + ", anterior=" + mejorAnterior.getPuntos());
+                            
+                            if (esPuntuacionMejor(nuevaPuntuacion, mejorAnterior)) {
                                 // La nueva puntuación es mejor, reemplazar
+                                Log.d("FirestoreManager", "Nueva puntuación es mejor, reemplazando");
                                 WriteBatch batch = db.batch();
                                 
                                 // Agregar nueva puntuación
@@ -75,11 +95,12 @@ public class FirestoreManager {
                                 batch.set(nuevaRef, nuevaPuntuacion.toMap());
                                 
                                 // Eliminar puntuación anterior
-                                batch.delete(result.getDocuments().get(0).getReference());
+                                batch.delete(mejorAnteriorDoc.getReference());
                                 
                                 return batch.commit();
                             } else {
-                                // La puntuación anterior es mejor o igual, no guardar
+                                // La puntuación anterior es mejor o igual, no guardar la nueva
+                                Log.d("FirestoreManager", "Puntuación anterior es mejor, no se guarda la nueva");
                                 return Tasks.forResult(null);
                             }
                         }
@@ -87,6 +108,26 @@ public class FirestoreManager {
                         throw task.getException();
                     }
                 });
+    }
+
+    // Método auxiliar para determinar si una puntuación es mejor que otra
+    private boolean esPuntuacionMejor(Puntuacion nueva, Puntuacion anterior) {
+        // Criterio principal: mayor puntuación
+        if (nueva.getPuntos() > anterior.getPuntos()) {
+            return true;
+        }
+        
+        // Si tienen la misma puntuación, criterio secundario: menor tiempo (solo si ambas están completadas)
+        if (nueva.getPuntos() == anterior.getPuntos()) {
+            if (nueva.isPartidaCompletada() && anterior.isPartidaCompletada()) {
+                return nueva.getDuracionPartida() < anterior.getDuracionPartida();
+            } else if (nueva.isPartidaCompletada() && !anterior.isPartidaCompletada()) {
+                // Preferir partidas completadas
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     // Guardar partida completa con todas las puntuaciones en una transacción
@@ -160,17 +201,15 @@ public class FirestoreManager {
         return db.collection(COLECCION_PUNTUACIONES)
                 .whereEqualTo("modoJuego", "clasico")
                 .orderBy("puntos", Query.Direction.DESCENDING)
-                .orderBy("duracionPartida", Query.Direction.ASCENDING)
                 .get();
     }
 
     // Obtener ranking clásico por tiempo (solo partidas completadas)
     public Task<QuerySnapshot> obtenerRankingClasicoPorTiempo(int limite) {
+        // Cambiar para incluir todas las partidas, no solo completadas
         return db.collection(COLECCION_PUNTUACIONES)
                 .whereEqualTo("modoJuego", "clasico")
-                .whereEqualTo("partidaCompletada", true)
                 .orderBy("duracionPartida", Query.Direction.ASCENDING)
-                .orderBy("puntos", Query.Direction.DESCENDING)
                 .get();
     }
 
@@ -179,7 +218,6 @@ public class FirestoreManager {
         return db.collection(COLECCION_PUNTUACIONES)
                 .whereEqualTo("modoJuego", "cooperativo")
                 .orderBy("puntos", Query.Direction.DESCENDING)
-                .orderBy("duracionPartida", Query.Direction.ASCENDING)
                 .get();
     }
 
@@ -187,9 +225,7 @@ public class FirestoreManager {
     public Task<QuerySnapshot> obtenerRankingCooperativoPorTiempo(int limite) {
         return db.collection(COLECCION_PUNTUACIONES)
                 .whereEqualTo("modoJuego", "cooperativo")
-                .whereEqualTo("partidaCompletada", true)
                 .orderBy("duracionPartida", Query.Direction.ASCENDING)
-                .orderBy("puntos", Query.Direction.DESCENDING)
                 .get();
     }
 
