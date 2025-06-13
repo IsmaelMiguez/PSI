@@ -95,6 +95,11 @@
     <string name="password_required">La contraseña es requerida</string>
     <string name="reauthentication_failed">Error de reautenticación</string>
 
+    <!-- Language section -->
+    <string name="language_section">Idioma</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+
     <!-- Help Activity -->
     <string name="help_section">Ayuda</string>
     <string name="help_controls_title">Controles:</string>

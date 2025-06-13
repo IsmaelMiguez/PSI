@@ -2,9 +2,13 @@ package es.udc.psi.pacman;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.media.MediaPlayer;
 import android.os.Vibrator;
 import android.util.Log;
+
+import java.util.Locale;
 
 /**
  * Clase para gestionar configuraciones globales de la aplicación.
@@ -23,6 +27,9 @@ public class SettingsManager {
         this.context = context.getApplicationContext();
         this.preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         this.helpPreferences = context.getSharedPreferences(HELP_PREFS_NAME, Context.MODE_PRIVATE);
+
+        // Aplicar idioma guardado al inicializar
+        applyLanguage();
     }
 
     public static synchronized SettingsManager getInstance(Context context) {
@@ -30,6 +37,49 @@ public class SettingsManager {
             instance = new SettingsManager(context);
         }
         return instance;
+    }
+
+        // === MÉTODOS DE IDIOMA ===
+    
+    /**
+     * Obtiene el idioma configurado
+     */
+    public String getLanguage() {
+        return preferences.getString("language", "es"); // Español por defecto
+    }
+    
+    /**
+     * Establece el idioma de la aplicación
+     */
+    public void setLanguage(String languageCode) {
+        preferences.edit().putString("language", languageCode).apply();
+        applyLanguage();
+        Log.d(TAG, "Language set to: " + languageCode);
+    }
+    
+    /**
+     * Aplica el idioma configurado
+     */
+    private void applyLanguage() {
+        String languageCode = getLanguage();
+        Locale locale = new Locale(languageCode);
+        Locale.setDefault(locale);
+        
+        Resources resources = context.getResources();
+        Configuration config = resources.getConfiguration();
+        config.setLocale(locale);
+        resources.updateConfiguration(config, resources.getDisplayMetrics());
+    }
+    
+    /**
+     * Obtiene el contexto con el idioma aplicado
+     */
+    public Context getLocalizedContext() {
+        String languageCode = getLanguage();
+        Locale locale = new Locale(languageCode);
+        Configuration config = new Configuration(context.getResources().getConfiguration());
+        config.setLocale(locale);
+        return context.createConfigurationContext(config);
     }
 
     // === MÉTODOS DE AUDIO ===
