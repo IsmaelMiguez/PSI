@@ -133,7 +133,8 @@
                     android:text="@string/enable_music"
                     android:textColor="@android:color/white"
                     android:layout_marginTop="16dp"
-                    android:checked="true" />
+                    android:checked="true"
+                    tools:ignore="UseSwitchCompatOrMaterialXml" />
 
                 <Switch
                     android:id="@+id/switchSoundEffects"
@@ -142,7 +143,8 @@
                     android:text="@string/enable_sound_effects"
                     android:textColor="@android:color/white"
                     android:layout_marginTop="8dp"
-                    android:checked="true" />
+                    android:checked="true"
+                    tools:ignore="UseSwitchCompatOrMaterialXml" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -201,7 +203,8 @@
                     android:text="@string/enable_vibration"
                     android:textColor="@android:color/white"
                     android:layout_marginTop="16dp"
-                    android:checked="true" />
+                    android:checked="true"
+                    tools:ignore="UseSwitchCompatOrMaterialXml" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

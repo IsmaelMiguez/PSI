@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Rankings"
+        android:text="@string/rankings"
         android:textSize="24sp"
         android:textStyle="bold"
         android:gravity="center"
@@ -23,7 +23,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Toca dos veces en una pestaña para alternar entre ranking por puntuación y por tiempo"
+        android:text="@string/ranking_top_message"
         android:textSize="12sp"
         android:textStyle="italic"
         android:gravity="center"
@@ -41,7 +41,7 @@
         <TextView
             android:layout_width="40dp"
             android:layout_height="wrap_content"
-            android:text="Pos"
+            android:text="@string/pos"
             android:textSize="14sp"
             android:textStyle="bold"
             android:gravity="center"
@@ -57,7 +57,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Jugador"
+                android:text="@string/jugador"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/white" />
@@ -66,7 +66,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Puntos"
+            android:text="@string/puntos"
             android:textSize="14sp"
             android:textStyle="bold"
             android:layout_marginEnd="12dp"
@@ -75,7 +75,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tiempo"
+            android:text="@string/tiempo"
             android:textSize="14sp"
             android:textStyle="bold"
             android:layout_marginEnd="12dp"
@@ -84,7 +84,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="✓"
+            android:text="@string/tick"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="@android:color/white" />

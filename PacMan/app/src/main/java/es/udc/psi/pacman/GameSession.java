@@ -105,13 +105,14 @@ public class GameSession {
         long endTime = System.currentTimeMillis();
         int duration = (int) ((endTime - startTime) / 1000); // duración en segundos
         
-        Log.d(TAG, "Finalizando partida - Completada: " + completed + ", Duración: " + duration + "s");
+        Log.d(TAG, "endGame() llamado - Completada: " + completed + ", Duración: " + duration + "s");
+        Log.d(TAG, "Número de jugadores: " + playerScores.size());
         
         if (playerScores.isEmpty()) {
             Log.w(TAG, "No hay puntuaciones para guardar");
             return;
         }
-        
+
         // Obtener información del usuario actual
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -119,11 +120,15 @@ public class GameSession {
             return;
         }
         
+        Log.d(TAG, "Usuario autenticado: " + currentUser.getUid());
+
         try {
             FirestoreManager firestoreManager = new FirestoreManager();
             
             // Crear y guardar la partida primero
             Partida partida = new Partida(duration, nivel, modoJuego, playerScores.size(), completed);
+            Log.d(TAG, "Guardando partida en Firestore...");
+            
             firestoreManager.guardarPartida(partida)
                     .addOnSuccessListener(documentReference -> {
                         String partidaId = documentReference.getId();
@@ -131,7 +136,7 @@ public class GameSession {
                         
                         // Procesar cada jugador y guardar/actualizar su mejor puntuación
                         for (PlayerScore playerScore : playerScores) {
-                            Log.d(TAG, "Puntuación actualizada para " + playerScore.playerName + 
+                            Log.d(TAG, "Procesando puntuación para " + playerScore.playerName + 
                                     ": " + playerScore.score + " puntos, " + playerScore.lives + " vidas");
                             
                             // Crear puntuación para este jugador

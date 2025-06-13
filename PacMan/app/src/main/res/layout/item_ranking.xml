@@ -16,7 +16,7 @@
         android:textSize="16sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:text="1" />
+        android:text="@string/_1" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:text="Nombre Jugador" />
+            android:text="@string/nombre_jugador" />
 
         <TextView
             android:id="@+id/tvDate"
@@ -39,7 +39,7 @@
             android:layout_height="wrap_content"
             android:textSize="12sp"
             android:textColor="@android:color/darker_gray"
-            android:text="01/01/2025" />
+            android:text="@string/date_placeholder" />
 
     </LinearLayout>
 
@@ -52,7 +52,7 @@
         android:layout_marginEnd="12dp"
         android:minWidth="60dp"
         android:gravity="center"
-        android:text="12345" />
+        android:text="@string/points_placeholder" />
 
     <TextView
         android:id="@+id/tvTime"
@@ -62,7 +62,7 @@
         android:layout_marginEnd="12dp"
         android:minWidth="50dp"
         android:gravity="center"
-        android:text="05:23" />
+        android:text="@string/hour_placeholder" />
 
     <TextView
         android:id="@+id/tvCompleted"
@@ -72,6 +72,6 @@
         android:textStyle="bold"
         android:minWidth="24dp"
         android:gravity="center"
-        android:text="✓" />
+        android:text="@string/tick" />
 
 </LinearLayout>

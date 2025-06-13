@@ -68,33 +68,42 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     final Handler handler = new Handler();
     List<Integer> freeDirs = new ArrayList<>(4);
 
-
-
     public DrawingView(Context context) {
         this(context, null);
-        // Inicializar sesion de juego
-        gameSession = new GameSession("clasico", 1);
     }
-
 
     public DrawingView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
+
+        if (gameSession == null) {
+            Log.d("DrawingView", "Inicializando GameSession desde constructor con AttributeSet");
+            gameSession = new GameSession("clasico", 1);
+        }
     }
 
-
     public DrawingView(Context context,
-                       AttributeSet attrs,
-                       int defStyleAttr) {
+                    AttributeSet attrs,
+                    int defStyleAttr) {
         this(context, attrs, defStyleAttr, 0);
+
+        if (gameSession == null) {
+            Log.d("DrawingView", "Inicializando GameSession desde constructor con defStyleAttr");
+            gameSession = new GameSession("clasico", 1);
+        }
     }
 
-
     public DrawingView(Context context,
-                       AttributeSet attrs,
-                       int defStyleAttr,
-                       int defStyleRes) {
+                    AttributeSet attrs,
+                    int defStyleAttr,
+                    int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(context);
+
+        if (gameSession == null) {
+            Log.d("DrawingView", "Inicializando GameSession desde constructor final");
+            gameSession = new GameSession("clasico", 1);
+        }
+        Log.d("DrawingView", "GameSession inicializada: " + (gameSession != null ? "SÍ" : "NO"));
     }
 
 
@@ -167,6 +176,10 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
 
                 //Update current and high scores
                 updateScores(canvas);
+                
+                // Actualizar GameSession periódicamente cada cierto número de frames
+                updateGameSession();
+                
                 holder.unlockCanvasAndPost(canvas);
             }
         }
@@ -332,20 +345,17 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
 
     private void checkCollisionSingle() {
         if (intersects(xPosPacman, yPosPacman, xPosGhost, yPosGhost)) {
-
+            Log.d("DrawingView", "Colisión detectada! Vidas restantes: " + lives[0]);
 
             currentScore = Math.max(0, currentScore - GHOST_DAMAGE);
 
-
-            // paint.setAlpha(120);
-            // drawSinglePacman(...)
-
             if (--lives[0] == 0) {
+                Log.d("DrawingView", "Se acabaron las vidas, llamando gameOver()");
                 gameOver();
                 return;
             }
 
-
+            // Respawn del jugador
             xPosPacman = RESPAWN_X * blockSize;
             yPosPacman = RESPAWN_Y * blockSize;
             direction      = 4;
@@ -355,10 +365,22 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
     }
 
     protected void gameOver() {
-        // Finalizar sesión de juego
+        Log.d("DrawingView", "gameOver() llamado - currentScore: " + currentScore + ", lives: " + lives[0]);
+        
+        // Verificar si gameSession existe, si no, crear una nueva
+        if (gameSession == null) {
+            Log.w("DrawingView", "gameSession era null, creando nueva instancia para guardar datos");
+            gameSession = new GameSession("clasico", 1);
+            // Agregar la puntuación del jugador principal
+            gameSession.updateMainPlayerScore(currentScore, lives[0]);
+        }
+        
         if (gameSession != null) {
+            Log.d("DrawingView", "Actualizando puntuación antes de terminar partida");
             gameSession.updateMainPlayerScore(currentScore, lives[0]);
             gameSession.endGame(false); // false porque se acabaron las vidas
+        } else {
+            Log.e("DrawingView", "Error: No se pudo crear gameSession");
         }
         
         /* muestra Toast en el hilo de UI y vuelve a MainActivity */
@@ -367,7 +389,7 @@ public class DrawingView extends SurfaceView implements Runnable, SurfaceHolder.
             Toast.makeText(ctx,
                     "Game Over. Puntuación obtenida: " + currentScore,
                     Toast.LENGTH_LONG).show();
-
+    
             if (ctx instanceof Activity) ((Activity) ctx).finish();
             ctx.startActivity(new Intent(ctx, MainActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP

@@ -105,4 +105,15 @@
     <string name="controls_centralized_message">Los controles se pueden cambiar desde Configuración</string>
     <string name="swipe_controls">Controles por Gestos</string>
     <string name="button_controls">Controles por Botones</string>
+    <string name="ranking_top_message">Toca dos veces en una pestaña para alternar entre ranking por puntuación y por tiempo</string>
+    <string name="pos">Pos</string>
+    <string name="jugador">Jugador</string>
+    <string name="puntos">Puntos</string>
+    <string name="tiempo">Tiempo</string>
+    <string name="tick">✓</string>
+    <string name="_1">1</string>
+    <string name="nombre_jugador">Nombre Jugador</string>
+    <string name="date_placeholder">01/01/2025</string>
+    <string name="points_placeholder">12345</string>
+    <string name="hour_placeholder">05:23</string>
 </resources>
