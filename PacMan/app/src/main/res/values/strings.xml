@@ -4,6 +4,7 @@
     <string name="resume">Resume</string>
     <string name="play">New Game</string>
     <string name="help">How To Play</string>
+    <string name="rankings">Rankings</string>
 
     <string name="howToPlayLabel">HOW TO PLAY</string>
 
@@ -32,7 +33,7 @@
     <string name="cancelar">Cancelar</string>
     <string name="_192_168_1_100">192.168.1.100</string>
 
-        <string name="welcome_guest">¡Bienvenido, Invitado!</string>
+    <string name="welcome_guest">¡Bienvenido, Invitado!</string>
     <string name="welcome_user">¡Bienvenido, %1$s!</string>
     <string name="loading_user_data">Cargando información del usuario...</string>
     <!-- Login Activity -->

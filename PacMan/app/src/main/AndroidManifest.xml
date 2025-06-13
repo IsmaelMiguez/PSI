@@ -68,6 +68,11 @@
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".RankingActivity"
+            android:exported="false"
+            android:label="Rankings" />
     </application>
 
 </manifest>

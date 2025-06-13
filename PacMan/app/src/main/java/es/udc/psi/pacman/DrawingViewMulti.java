@@ -15,8 +15,10 @@ public class DrawingViewMulti extends DrawingView {
     private int[] nextDir = new int[]{4};
     private int[] viewDir = new int[]{2};
 
-    public DrawingViewMulti(Context ctx) {
-        super(ctx);
+    public DrawingViewMulti(Context context) {
+        super(context);
+        // Cambiar a modo cooperativo
+        gameSession = new GameSession("cooperativo", 1);
     }
 
 
@@ -39,6 +41,42 @@ public class DrawingViewMulti extends DrawingView {
         }
         lives = Arrays.copyOf(lives, count);
         for (int i = old; i < count; i++) lives[i] = MAX_LIVES;
+
+        // Actualizar jugadores en la sesión
+        // Por simplicidad, agregamos jugadores genéricos para multijugador
+        if (gameSession != null) {
+            for (int i = 1; i < count; i++) { // Empezar desde 1 porque el 0 ya está agregado
+                gameSession.addPlayer("player_" + i, "Jugador " + (i + 1), 0, 3);
+            }
+        }
+    }
+
+    @Override
+    protected void gameOver() {
+        // Actualizar puntuaciones de todos los jugadores
+        if (gameSession != null) {
+            for (int i = 0; i < Math.min(xPosPacman.length, lives.length); i++) {
+                if (i == 0) {
+                    gameSession.updateMainPlayerScore(currentScore, lives[i]);
+                } else {
+                    gameSession.updatePlayerScore("player_" + i, currentScore, lives[i]);
+                }
+            }
+            
+            // Verificar si todos los jugadores perdieron
+            boolean allDead = true;
+            for (int life : lives) {
+                if (life > 0) {
+                    allDead = false;
+                    break;
+                }
+            }
+            
+            // Terminar el juego - si allDead es true, la partida NO está completada
+            gameSession.endGame(!allDead);
+        }
+        
+        super.gameOver();
     }
 
 

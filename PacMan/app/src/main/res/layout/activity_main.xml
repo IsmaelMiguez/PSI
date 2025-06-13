@@ -64,6 +64,14 @@
                 android:text="@string/pantalla_extendida"
                 android:onClick="showExtendedMenu"
                 android:layout_marginBottom="5dp" />
+
+            <Button
+                android:id="@+id/btnRankings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="Rankings"
+                android:textSize="18sp" />
         </LinearLayout>
 
         <Button

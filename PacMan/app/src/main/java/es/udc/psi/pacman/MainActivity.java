@@ -19,6 +19,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentSnapshot;
 
+import es.udc.psi.pacman.data.FirestoreManager;
+import es.udc.psi.pacman.data.models.Puntuacion;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static MediaPlayer player;
@@ -27,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isGuest = false;
     private Button btnSettings;
     private SettingsManager settingsManager;
+    private Button btnRankings;
 
     // Method to start activity for Play button
     public void showPlayScreen(View view) {
@@ -73,8 +77,16 @@ public class MainActivity extends AppCompatActivity {
         btnSettings = findViewById(R.id.btnSettings);
         btnSettings.setOnClickListener(v -> showSettingsScreen());
         
+        btnRankings = findViewById(R.id.btnRankings);
+        btnRankings.setOnClickListener(v -> showRankingsScreen());
+        
         // Verificar estado del usuario
         checkUserStatus();
+    }
+
+    private void showRankingsScreen() {
+        Intent intent = new Intent(this, RankingActivity.class);
+        startActivity(intent);
     }
 
     private void checkUserStatus() {
