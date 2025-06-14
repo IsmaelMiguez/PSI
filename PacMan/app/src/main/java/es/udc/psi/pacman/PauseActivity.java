@@ -14,8 +14,8 @@ public class PauseActivity extends Activity {
     }
 
     // Method to start activity for Help button
-    public void showHelpScreen(View view) {
-        Intent helpIntent = new Intent(this, HelpActivity.class);
+    public void showSettingsScreen(View view) {
+        Intent helpIntent = new Intent(this, SettingsActivity.class);
         startActivity(helpIntent);
     }
 
