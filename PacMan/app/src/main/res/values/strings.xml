@@ -1,0 +1,125 @@
+<resources>
+    <string name="app_name">PacmanAndroid</string>
+    <string name="action_settings">Settings</string>
+    <string name="resume">Resume</string>
+    <string name="play">New Game</string>
+    <string name="help">How To Play</string>
+    <string name="rankings">Rankings</string>
+
+    <string name="howToPlayLabel">HOW TO PLAY</string>
+
+    <string name="ordenado_por_puntuacion">📊 Ordenado por Puntuación</string>
+    <string name="ordenado_por_tiempo">⏱️ Ordenado por Tiempo</string>
+
+
+    <string name="controlsLabel">CONTROLS</string>
+    <string name="controls">Up: Swipe Up\nDown: Swipe Down\nLeft: Swipe Left\nRight: Swipe Right\n
+        "Pause: Hold Screen    "
+    </string>
+    <string name="pauseLabel">PAUSA</string>
+    <string name="settingsLabel">Settings</string>
+    <string name="resumeLabel">Resume</string>
+    <string name="multijugador">Multijugador</string>
+    <string name="pantalla_extendida">Cooperativo Extendido</string>
+    <string name="clasico">Clasico</string>
+    <string name="configuracion">Configuracion</string>
+    <string name="arrow_up">↑</string>
+    <string name="arrow_left">←</string>
+    <string name="arrow_right">→</string>
+    <string name="arrow_down">↓</string>
+
+    <string name="abrir_pantalla">Abrir pantalla</string>
+    <string name="abrir_mando">Abrir mando</string>
+    <string name="ip_del_host">IP del host</string>
+    <string name="introduce_la_direcci_n_ip_de_la_pantalla_principal">Introduce la dirección IP de la pantalla principal</string>
+    <string name="aceptar">Aceptar</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="_192_168_1_100">192.168.1.100</string>
+
+    <string name="welcome_guest">¡Bienvenido, Invitado!</string>
+    <string name="welcome_user">¡Bienvenido, %1$s!</string>
+    <string name="loading_user_data">Cargando información del usuario...</string>
+    <!-- Login Activity -->
+    <string name="login_welcome">Bienvenido a PacMan</string>
+    <string name="username">Nombre de usuario</string>
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="register">Registrarse</string>
+    <string name="login">Iniciar sesión</string>
+    <string name="or">o</string>
+    <string name="continue_as_guest">Continuar como invitado</string>
+    <string name="error_fields_empty">Por favor, completa todos los campos</string>
+    <string name="error_auth_failed">Error en la autenticación</string>
+    <string name="guest_mode_active">Modo invitado activo</string>
+    <string name="login_successful">Inicio de sesión exitoso</string>
+    <string name="register_successful">Registro exitoso</string>
+    <string name="cerrar_sesion">Cerrar sesión</string>
+    <string name="pacman_logo">pacman_logo</string>
+
+    <!-- Settings Activity -->
+    <string name="settings">Configuración</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="delete_account">Eliminar cuenta</string>
+    <string name="back">Volver</string>
+    <string name="confirm_delete_account">¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.</string>
+    <string name="confirm">Confirmar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="account_deleted">Cuenta eliminada correctamente</string>
+    <string name="logged_out">Sesión cerrada correctamente</string>
+    <string name="error_delete_account">Error al eliminar la cuenta</string>
+    <string name="user_info">Usuario: %1$s\nEmail: %2$s</string>
+    <string name="guest_user_info">Usuario invitado\nNo se guardará tu puntuación</string>
+    <string name="reauth_required">Por favor, ingresa tu contraseña para continuar</string>
+    <string name="user_section">Información de usuario</string>
+    <string name="audio_section">Configuración de audio</string>
+    <string name="music_volume">Volumen de música:</string>
+    <string name="enable_music">Habilitar música</string>
+    <string name="enable_sound_effects">Habilitar efectos de sonido</string>
+    <string name="controls_section">Controles</string>
+    <string name="control_buttons">Botones direccionales</string>
+    <string name="control_swipe">Gestos deslizantes</string>
+    <string name="enable_vibration">Habilitar vibración</string>
+    <string name="difficulty_section">Dificultad</string>
+    <string name="difficulty_easy">Fácil</string>
+    <string name="difficulty_normal">Normal</string>
+    <string name="difficulty_hard">Difícil</string>
+    <string name="settings_saved">Configuración guardada</string>
+
+    <!-- Account deletion -->
+    <string name="delete_game_data_title">Eliminar datos de juego</string>
+    <string name="delete_game_data_message">¿Deseas eliminar también todas tus partidas y tu posición en los rankings?\n\nEsta acción no se puede deshacer.</string>
+    <string name="yes_delete_all">Sí, eliminar todo</string>
+    <string name="no_only_account">No, solo la cuenta</string>
+    <string name="reauthenticate">Reautenticación requerida</string>
+    <string name="enter_password_to_delete">Por favor, ingresa tu contraseña para confirmar la eliminación de la cuenta</string>
+    <string name="password_required">La contraseña es requerida</string>
+    <string name="reauthentication_failed">Error de reautenticación</string>
+
+    <!-- Language section -->
+    <string name="language_section">Idioma</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+
+    <!-- Help Activity -->
+    <string name="help_section">Ayuda</string>
+    <string name="help_controls_title">Controles:</string>
+    <string name="help_controls_description">Usa los botones de dirección o gestos deslizantes para mover a Pac-Man por el laberinto.</string>
+    <string name="help_objective_title">Objetivo:</string>
+    <string name="help_objective_description">Come todos los puntos del laberinto mientras evitas a los fantasmas. Los puntos grandes te permiten comer fantasmas temporalmente.</string>
+    <string name="help_enemies_title">Enemigos:</string>
+    <string name="help_enemies_description">Cada fantasma tiene un comportamiento diferente. Blinky (rojo) te persigue directamente, Pinky (rosa) intenta emboscarte, Inky (azul) es impredecible, y Clyde (naranja) deambula por su cuenta.</string>
+    <string name="help_control_switch">Usar controles con botones</string>
+
+    <string name="controls_centralized_message">Los controles se pueden cambiar desde Configuración</string>
+    <string name="ranking_top_message">Toca dos veces en una pestaña para alternar entre ranking por puntuación y por tiempo</string>
+    <string name="pos">Pos</string>
+    <string name="jugador">Jugador</string>
+    <string name="puntos">Puntos</string>
+    <string name="tiempo">Tiempo</string>
+    <string name="tick">✓</string>
+    <string name="_1">1</string>
+    <string name="nombre_jugador">Nombre Jugador</string>
+    <string name="date_placeholder">01/01/2025</string>
+    <string name="points_placeholder">12345</string>
+    <string name="hour_placeholder">05:23</string>
+</resources>

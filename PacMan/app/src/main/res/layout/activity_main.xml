@@ -1,0 +1,89 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    tools:context=".MainActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="16dp"
+        android:background="@color/black"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:touchscreenBlocksFocus="false">
+
+        <ImageView
+            android:id="@+id/MainMenuImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/menu_main_wallpaper"
+            android:scaleType="fitXY" />
+
+        <!-- Mensaje de bienvenida -->
+        <TextView
+            android:id="@+id/tvWelcome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/imgLogo"
+            android:layout_marginTop="20dp"
+            android:layout_marginHorizontal="16dp"
+            android:textSize="30sp"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:text="@string/welcome_guest"
+            tools:ignore="NotSibling" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_below="@id/tvWelcome"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="20dp"
+            android:padding="16dp"
+            android:layout_alignBottom="@id/MainMenuImage">
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="showPlayScreen"
+                android:text="@string/clasico"
+                android:layout_marginBottom="5dp" />
+
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/pantalla_extendida"
+                android:onClick="showExtendedMenu"
+                android:layout_marginBottom="5dp" />
+
+            <Button
+                android:id="@+id/btnRankings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="@string/rankings"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="16dp"
+            android:layout_marginHorizontal="16dp" />
+
+    </RelativeLayout>
+
+</LinearLayout>
+

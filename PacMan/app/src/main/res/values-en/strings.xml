@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PacMan</string>
+    <string name="jugar">Play</string>
+    <string name="multijugador">Multiplayer</string>
+    <string name="clasificacion">Leaderboard</string>
+    <string name="ayuda">Help</string>
+    <string name="salir">Exit</string>
+    <string name="game_over">Game Over</string>
+    <string name="score">Score</string>
+    <string name="high_score">High Score</string>
+    <string name="nivel">Level</string>
+    <string name="vidas">Lives</string>
+    <string name="continuar">Continue</string>
+    <string name="menu_principal">Main Menu</string>
+    <string name="pausar">Pause</string>
+    <string name="reanudar">Resume</string>
+    <string name="reiniciar">Restart</string>
+    <string name="numero_jugadores">Number of Players</string>
+    <string name="cooperativo">Cooperative</string>
+    <string name="pantalla_extendida">Extended Cooperative</string>
+    <string name="clasico">Classic</string>
+    <string name="configuracion">Settings</string>
+    <string name="arrow_up">↑</string>
+    <string name="arrow_left">←</string>
+    <string name="arrow_right">→</string>
+    <string name="arrow_down">↓</string>
+
+    <string name="abrir_pantalla">Open screen</string>
+    <string name="abrir_mando">Open controller</string>
+    <string name="ip_del_host">Host IP</string>
+    <string name="introduce_la_direcci_n_ip_de_la_pantalla_principal">Enter the IP address of the main screen</string>
+    <string name="aceptar">Accept</string>
+    <string name="cancelar">Cancel</string>
+    <string name="_192_168_1_100">192.168.1.100</string>
+
+    <string name="welcome_guest">Welcome, Guest!</string>
+    <string name="welcome_user">Welcome, %1$s!</string>
+    <string name="loading_user_data">Loading user data...</string>
+
+    <!-- Login Activity -->
+    <string name="login_welcome">Welcome to PacMan</string>
+    <string name="username">Username</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="register">Sign Up</string>
+    <string name="login">Sign In</string>
+    <string name="or">or</string>
+    <string name="continue_as_guest">Continue as guest</string>
+    <string name="error_fields_empty">Please fill all fields</string>
+    <string name="error_auth_failed">Authentication error</string>
+    <string name="guest_mode_active">Guest mode active</string>
+    <string name="login_successful">Successful login</string>
+    <string name="register_successful">Successful registration</string>
+    <string name="cerrar_sesion">Sign out</string>
+    <string name="pacman_logo">pacman_logo</string>
+
+    <!-- Settings Activity -->
+    <string name="settings">Settings</string>
+    <string name="logout">Sign out</string>
+    <string name="delete_account">Delete account</string>
+    <string name="back">Back</string>
+    <string name="confirm_delete_account">Are you sure you want to delete your account? This action cannot be undone.</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="account_deleted">Account deleted successfully</string>
+    <string name="logged_out">Signed out successfully</string>
+    <string name="error_delete_account">Error deleting account</string>
+    <string name="user_info">User: %1$s\nEmail: %2$s</string>
+    <string name="guest_user_info">Guest user\nYour score will not be saved</string>
+    <string name="reauth_required">Please enter your password to continue</string>
+    <string name="user_section">User information</string>
+    <string name="audio_section">Audio settings</string>
+    <string name="music_volume">Music volume:</string>
+    <string name="enable_music">Enable music</string>
+    <string name="enable_sound_effects">Enable sound effects</string>
+    <string name="controls_section">Controls</string>
+    <string name="control_buttons">Directional buttons</string>
+    <string name="control_swipe">Swipe gestures</string>
+    <string name="enable_vibration">Enable vibration</string>
+    <string name="difficulty_section">Difficulty</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_normal">Normal</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="settings_saved">Settings saved</string>
+
+    <!-- Account deletion -->
+    <string name="delete_game_data_title">Delete game data</string>
+    <string name="delete_game_data_message">Do you also want to delete all your games and your position in the rankings?\n\nThis action cannot be undone.</string>
+    <string name="yes_delete_all">Yes, delete all</string>
+    <string name="no_only_account">No, only account</string>
+    <string name="reauthenticate">Reauthentication required</string>
+    <string name="enter_password_to_delete">Please enter your password to confirm account deletion</string>
+    <string name="password_required">Password is required</string>
+    <string name="reauthentication_failed">Reauthentication error</string>
+
+    <!-- Language section -->
+    <string name="language_section">Language</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+
+    <!-- Help Activity -->
+    <string name="help_section">Help</string>
+    <string name="help_controls_title">Controls:</string>
+    <string name="help_controls_description">Use the direction buttons or swipe gestures to move Pac-Man through the maze.</string>
+    <string name="help_objective_title">Objective:</string>
+    <string name="help_objective_description">Eat all the dots in the maze while avoiding the ghosts. Large dots allow you to eat ghosts temporarily.</string>
+    <string name="help_enemies_title">Enemies:</string>
+    <string name="help_enemies_description">Each ghost has different behavior. Blinky (red) chases you directly, Pinky (pink) tries to ambush you, Inky (blue) is unpredictable, and Clyde (orange) wanders on his own.</string>
+    <string name="help_control_switch">Use button controls</string>
+
+    <string name="controls_centralized_message">Controls can be changed from Settings</string>
+    <string name="swipe_controls">Gesture Controls</string>
+    <string name="button_controls">Button Controls</string>
+
+    <!-- Ranking Activity -->
+    <string name="ranking_tab_classic">Classic</string>
+    <string name="ranking_tab_cooperative">Cooperative</string>
+    <string name="ranking_top_message">Double tap on a tab to switch between score and time ranking</string>
+    <string name="pos">Pos</string>
+    <string name="jugador">Player</string>
+    <string name="puntos">Points</string>
+    <string name="tiempo">Time</string>
+    <string name="tick">✓</string>
+    <string name="_1">1</string>
+    <string name="nombre_jugador">Player Name</string>
+    <string name="date_placeholder">01/01/2025</string>
+    <string name="points_placeholder">12345</string>
+    <string name="hour_placeholder">05:23</string>
+</resources>
