@@ -57,10 +57,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".HelpActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".PlayActivity"
             android:exported="false" />
 
