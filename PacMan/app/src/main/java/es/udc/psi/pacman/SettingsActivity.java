@@ -48,12 +48,15 @@ public class SettingsActivity extends AppCompatActivity {
     private Switch switchMusic, switchSoundEffects, switchVibration;
     private RadioGroup rgControlType, rgDifficulty;
     private RadioButton rbButtons, rbSwipe, rbEasy, rbNormal, rbHard;
+
+    private RadioGroup rgLanguage;
+    private RadioButton rbSpanish, rbEnglish;
     
     // Firebase
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     
-    // Settings Manager - única fuente de verdad
+    // Settings Manager
     private SettingsManager settingsManager;
     
     @Override
@@ -61,14 +64,14 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         
-        // Inicializar SettingsManager PRIMERO
+        // Inicializar SettingsManager
         settingsManager = SettingsManager.getInstance(this);
         
         // Inicializar Firebase Auth y Firestore
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         
-        // Vincular vistas
+        // Iniciar vistas
         initViews();
         
         // Verificar si hay usuario logueado
@@ -82,7 +85,7 @@ public class SettingsActivity extends AppCompatActivity {
         
         // Cargar configuraciones guardadas
         loadSettings();
-        
+
         // Mostrar información del usuario
         displayUserInfo();
     }
@@ -99,6 +102,7 @@ public class SettingsActivity extends AppCompatActivity {
         sbMusicVolume = findViewById(R.id.sbMusicVolume);
         switchMusic = findViewById(R.id.switchMusic);
         switchSoundEffects = findViewById(R.id.switchSoundEffects);
+        switchVibration = findViewById(R.id.switchVibration);
         
         // Controls section
         rgControlType = findViewById(R.id.rgControlType);
@@ -111,6 +115,11 @@ public class SettingsActivity extends AppCompatActivity {
         rbEasy = findViewById(R.id.rbEasy);
         rbNormal = findViewById(R.id.rbNormal);
         rbHard = findViewById(R.id.rbHard);
+
+        // Language section
+        rgLanguage = findViewById(R.id.rgLanguage);
+        rbSpanish = findViewById(R.id.rbSpanish);
+        rbEnglish = findViewById(R.id.rbEnglish);
     }
     
     private void setUpListeners() {
@@ -174,6 +183,8 @@ public class SettingsActivity extends AppCompatActivity {
         boolean vibrationEnabled = settingsManager.isVibrationEnabled();
         boolean isButtonControl = settingsManager.isButtonControl();
         String difficulty = settingsManager.getDifficulty();
+
+        String language = settingsManager.getLanguage();
         
         // Aplicar configuraciones a la UI
         sbMusicVolume.setProgress(musicVolume);
@@ -200,8 +211,17 @@ public class SettingsActivity extends AppCompatActivity {
                 rbNormal.setChecked(true);
                 break;
         }
-        
-        Log.d(TAG, "Settings loaded - Control type: " + (isButtonControl ? "buttons" : "swipe"));
+
+        // Language
+        switch (language) {
+            case "en":
+                rbEnglish.setChecked(true);
+                break;
+            default:
+                rbSpanish.setChecked(true);
+                break;
+        }
+
     }
     
     private void saveSettings() {
@@ -225,8 +245,19 @@ public class SettingsActivity extends AppCompatActivity {
             difficulty = "normal";
         }
         settingsManager.setDifficulty(difficulty);
+
+        // Language
+        String language = rbEnglish.isChecked() ? "en" : "es";
+        String currentLanguage = settingsManager.getLanguage();
         
-        Log.d(TAG, "Settings saved - Control type: " + controlType);
+        if (!language.equals(currentLanguage)) {
+            settingsManager.setLanguage(language);
+            // Recrear la actividad para aplicar el nuevo idioma
+            recreate();
+            return;
+        }
+        
+        Log.d(TAG, "Settings saved - Control type: " + controlType + ", Language: " + language);
         Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show();
     }
     
